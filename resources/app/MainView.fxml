@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="10" alignment="CENTER" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="app.MainController">
+
+    <Label text="Schedule Reminder App" styleClass="title"/>
+
+    <!-- Add / Update Inputs -->
+    <HBox spacing="10">
+        <TextField fx:id="eventInput" promptText="Event Name"/>
+        <DatePicker fx:id="dateInput"/>
+        <Button text="Add" onAction="#addEvent"/>
+        <Button text="Update" onAction="#updateEvent"/>
+    </HBox>
+
+    <!-- Event List -->
+    <ListView fx:id="eventList" prefWidth="350" prefHeight="220"/>
+
+    <!-- Delete Button -->
+    <Button text="Delete Selected Event" onAction="#deleteEvent"/>
+
+    <!-- Reminder Button -->
+    <Button text="Check Reminders" onAction="#checkReminders"/>
+
+</VBox>
