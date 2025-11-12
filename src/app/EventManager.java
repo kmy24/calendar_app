@@ -3,7 +3,7 @@ package app;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
-
+//comment
 public class EventManager {
 
     private StorageManager storage = new StorageManager();
