@@ -65,14 +65,28 @@ public class CalendarApp_Draft {
     // VIEW
     static void viewEvents() {
         if (events.isEmpty()) {
-            System.out.println("No events found.");
-            return;
+        System.out.println("No events found.");
+        return;
+    }
+
+    System.out.println("View Options:");
+    System.out.println("1. Weekly View");
+    System.out.println("2. Monthly Calendar View");
+    System.out.print("Enter choice: ");
+
+    try {
+        int choice = sc.nextInt();
+        sc.nextLine(); // consume newline
+
+        switch (choice) {
+            case 1 -> viewWeek();
+            case 2 -> viewMonth();
+            default -> System.out.println("Invalid choice.");
         }
-        System.out.println("\nID  | Title                | Date");
-        System.out.println("----|----------------------|------------");
-        for (Event e : events) {
-            System.out.printf("%-3d | %-20s | %s%n", e.id, e.title, e.date);
-        }
+    } catch (InputMismatchException e) {
+        System.out.println("Invalid input. Please enter a number.");
+        sc.nextLine(); // clear invalid input
+    }
     }
 
     // UPDATE
@@ -129,4 +143,82 @@ public class CalendarApp_Draft {
             sc.nextLine(); // Clear invalid input
         }
     }
+    
+    static void viewWeek() {
+    System.out.print("Enter a date in YYYY-MM-DD format to start the week: ");
+    try {
+        LocalDate start = LocalDate.parse(sc.nextLine());
+
+        // Adjust to Sunday (start of the week)
+        LocalDate weekStart = start.minusDays(start.getDayOfWeek().getValue() % 7);
+
+        System.out.println("\n=== Week of " + weekStart + " ===");
+
+        for (int i = 0; i < 7; i++) {
+            LocalDate day = weekStart.plusDays(i);
+            String dayName = day.getDayOfWeek().toString().substring(0, 3); // SUN, MON, etc.
+
+            List<Event> eventsToday = new ArrayList<>();
+            for (Event e : events) {
+                if (e.date.equals(day)) {
+                    eventsToday.add(e);
+                }
+            }
+
+            System.out.print(dayName + " " + String.format("%02d", day.getDayOfMonth()) + ": ");
+            if (eventsToday.isEmpty()) {
+                System.out.println("No events");
+            } else {
+                for (int j = 0; j < eventsToday.size(); j++) {
+                    System.out.print(eventsToday.get(j).title);
+                    if (j < eventsToday.size() - 1) System.out.print(", ");
+                }
+                System.out.println();
+            }
+        }
+
+    } catch (DateTimeParseException e) {
+        System.out.println("Invalid date format. Use YYYY-MM-DD.");
+    }
+}
+    
+    static void viewMonth() {
+    try {
+        System.out.print("Enter month and year (MM YYYY): ");
+        int month = sc.nextInt();
+        int year = sc.nextInt();
+        sc.nextLine(); // consume newline
+
+        LocalDate firstDay = LocalDate.of(year, month, 1);
+        int lengthOfMonth = firstDay.lengthOfMonth();
+        int startDay = firstDay.getDayOfWeek().getValue() % 7; // Sunday = 0
+
+        System.out.println("\n" + firstDay.getMonth() + " " + year);
+        System.out.println("Su Mo Tu We Th Fr Sa");
+
+        for (int i = 0; i < startDay; i++) {
+            System.out.print("   ");
+        }
+
+        for (int day = 1; day <= lengthOfMonth; day++) {
+            LocalDate current = LocalDate.of(year, month, day);
+            boolean hasEvent = events.stream().anyMatch(e -> e.date.equals(current));
+            System.out.printf("%2d%s ", day, hasEvent ? "*" : " ");
+
+            if ((day + startDay) % 7 == 0) System.out.println();
+        }
+        System.out.println();
+
+        // List events below calendar
+        for (Event e : events) {
+            if (e.date.getMonthValue() == month && e.date.getYear() == year) {
+                System.out.println("* " + e.date.getDayOfMonth() + ": " + e.title);
+            }
+        }
+
+    } catch (InputMismatchException e) {
+        System.out.println("Invalid input. Use numbers like 10 2025.");
+        sc.nextLine();
+    }
+}
 }
