@@ -175,6 +175,7 @@ public class CalendarApp_Draft {
                 }
                 System.out.println();
             }
+
         }
 
     } catch (DateTimeParseException e) {
@@ -194,10 +195,10 @@ public class CalendarApp_Draft {
         int startDay = firstDay.getDayOfWeek().getValue() % 7; // Sunday = 0
 
         System.out.println("\n" + firstDay.getMonth() + " " + year);
-        System.out.println("Su Mo Tu We Th Fr Sa");
+        System.out.println("Sun Mon Tue Wed Thu Fri Sat ");
 
         for (int i = 0; i < startDay; i++) {
-            System.out.print("   ");
+            System.out.print("    ");
         }
 
         for (int day = 1; day <= lengthOfMonth; day++) {
