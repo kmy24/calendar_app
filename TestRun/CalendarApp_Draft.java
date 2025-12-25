@@ -51,8 +51,9 @@ public class CalendarApp_Draft {
             System.out.println("\n=== CALENDAR APP ===");
             System.out.println("1. Create Event");
             System.out.println("2. View Events (Week/Month)");
-            System.out.println("3. Delete Event");
-            System.out.println("4. Exit");
+            System.out.println("3. Update Event");
+            System.out.println("4. Delete Event");
+            System.out.println("5. Exit");
             System.out.print("Enter choice: ");
             
             try {
@@ -60,15 +61,17 @@ public class CalendarApp_Draft {
                 sc.nextLine(); 
 
                 switch (choice) {
-                    case 1 -> createEvent();
-                    case 2 -> viewEvents();
-                    case 3 -> deleteEvent();
-                    case 4 -> {
-                        System.out.println("Exiting...");
-                        System.exit(0);
-                    }
-                    default -> System.out.println("Invalid choice.");
-                }
+    case 1 -> createEvent();
+    case 2 -> viewEvents();
+    case 3 -> updateEvent();   // NEW
+    case 4 -> deleteEvent();
+    case 5 -> {
+        System.out.println("Exiting...");
+        System.exit(0);
+    }
+    default -> System.out.println("Invalid choice.");
+}
+
             } catch (InputMismatchException e) {
                 System.out.println("Invalid input.");
                 sc.nextLine();
@@ -241,6 +244,101 @@ public class CalendarApp_Draft {
             }
         }
     }
+    static void updateEvent() {
+    System.out.println("\n--- Update Event ---");
+    System.out.print("Enter Event ID to update: ");
+
+    try {
+        int id = sc.nextInt();
+        sc.nextLine(); // consume newline
+
+        Event target = null;
+
+        // Find event
+        for (Event e : events) {
+            if (e.id == id) {
+                target = e;
+                break;
+            }
+        }
+
+        if (target == null) {
+            System.out.println("❌ Event with ID " + id + " not found.");
+            return;
+        }
+
+        // Update title
+        System.out.print(
+            "New Title (press Enter to keep current: \"" + target.title + "\"): "
+        );
+        String newTitle = sc.nextLine();
+        if (!newTitle.trim().isEmpty()) {
+            target.title = newTitle.trim();
+        }
+
+        // Update description
+        System.out.print(
+            "New Description (press Enter to keep current): "
+        );
+        String newDesc = sc.nextLine();
+        if (!newDesc.trim().isEmpty()) {
+            target.description = newDesc.trim();
+        }
+
+        // Update date (with validation)
+        while (true) {
+            System.out.print(
+                "New Date (YYYY-MM-DD, press Enter to keep current: " 
+                + target.date + "): "
+            );
+            String dateInput = sc.nextLine().trim();
+
+            if (dateInput.isEmpty()) break;
+
+            try {
+                target.date = LocalDate.parse(dateInput);
+                break;
+            } catch (DateTimeParseException e) {
+                System.out.println("⚠ Invalid date format. Try again.");
+            }
+        }
+
+        // Update recurrence if exists
+        if (recurrenceMap.containsKey(id)) {
+            System.out.print("Update recurrence? (y/n): ");
+            String choice = sc.nextLine();
+
+            if (choice.equalsIgnoreCase("y")) {
+                System.out.print("New interval (e.g., 1d, 2w, 1m): ");
+                String interval = sc.nextLine();
+
+                System.out.println("End condition: 1. Count  2. Until Date");
+                int type = sc.nextInt();
+                sc.nextLine();
+
+                int count = 0;
+                LocalDate endDate = null;
+
+                if (type == 1) {
+                    System.out.print("Repeat how many times: ");
+                    count = sc.nextInt();
+                    sc.nextLine();
+                } else {
+                    System.out.print("Recur until (YYYY-MM-DD): ");
+                    endDate = LocalDate.parse(sc.nextLine());
+                }
+
+                recurrenceMap.put(id, new Recurrence(id, interval, count, endDate));
+            }
+        }
+
+        System.out.println("✅ Event updated successfully.");
+
+    } catch (InputMismatchException e) {
+        System.out.println("❌ Invalid ID. Please enter a number.");
+        sc.nextLine();
+    }
+}
 
     
     static void deleteEvent() {
