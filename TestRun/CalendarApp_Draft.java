@@ -92,7 +92,7 @@ public class CalendarApp_Draft {
     sc.nextLine();
 
     switch (sChoice) {
-        case 1 -> searchById();//search by id
+        case 1 -> searchEventById(); 
         case 2 -> searchByTitle();
         case 3 -> searchByDate();
         default -> System.out.println("Invalid choice.");
@@ -155,6 +155,25 @@ public class CalendarApp_Draft {
             if (!found) System.out.println("No events found on " + targetDate);
         } catch (Exception e) {
             System.out.println("Invalid date format.");
+        }
+    }
+
+    // SEARCH by ID
+        static void searchEventById() {
+        System.out.print("Enter Event ID: ");
+        int id = sc.nextInt(); sc.nextLine();
+
+        boolean found = false;
+        for (Event e : events) {
+            if (e.id == id) {
+                System.out.println("Found: " + e);
+                found = true;
+                break; // stop once found
+            }
+        }
+
+        if (!found) {
+            System.out.println("No event found with ID: " + id);
         }
     }
 
