@@ -92,7 +92,7 @@ public class CalendarApp_Draft {
     sc.nextLine();
 
     switch (sChoice) {
-        case 1 -> searchById();
+        case 1 -> searchById();//search by id
         case 2 -> searchByTitle();
         case 3 -> searchByDate();
         default -> System.out.println("Invalid choice.");
