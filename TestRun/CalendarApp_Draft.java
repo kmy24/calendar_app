@@ -399,6 +399,23 @@ public class CalendarApp_Draft {
         int id = sc.nextInt();
         sc.nextLine();
         
+        Event deletedEvent = null;
+        for (Event e : events) {
+                if (e.id == id) {
+                    deletedEvent = e;
+                    break;
+                }
+            }
+
+            if (deletedEvent != null) {
+                System.out.println("You are about to delete: " + deletedEvent.title + " on " + deletedEvent.date);
+                System.out.print("Are you sure? (y/n): ");
+                String confirm = sc.nextLine();
+                if (!confirm.equalsIgnoreCase("y")) {
+                    System.out.println("Deletion cancelled.");
+                    return;
+                }
+            }
        
         boolean removed = events.removeIf(e -> e.id == id);
         
