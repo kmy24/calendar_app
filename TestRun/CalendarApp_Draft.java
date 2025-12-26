@@ -53,7 +53,8 @@ public class CalendarApp_Draft {
             System.out.println("2. View Events (Week/Month)");
             System.out.println("3. Update Event");
             System.out.println("4. Delete Event");
-            System.out.println("5. Exit");
+            System.out.println("5. Search Menu");
+            System.out.println("6. Exit");
             System.out.print("Enter choice: ");
             
             try {
@@ -65,7 +66,8 @@ public class CalendarApp_Draft {
     case 2 -> viewEvents();
     case 3 -> updateEvent();   // NEW
     case 4 -> deleteEvent();
-    case 5 -> {
+    case 5 -> searchMenu();
+    case 6 -> {
         System.out.println("Exiting...");
         System.exit(0);
     }
@@ -79,7 +81,24 @@ public class CalendarApp_Draft {
         }
     }
 
-   
+    static void searchMenu() {
+    System.out.println("\n--- Search Menu ---");
+    System.out.println("1. Search by ID");
+    System.out.println("2. Search by Title");
+    System.out.println("3. Search by Date");
+    System.out.print("Enter choice: ");
+
+    int sChoice = sc.nextInt();
+    sc.nextLine();
+
+    switch (sChoice) {
+        case 1 -> searchById();
+        case 2 -> searchByTitle();
+        case 3 -> searchByDate();
+        default -> System.out.println("Invalid choice.");
+    }
+}
+
     static List<String> getEventTitlesForDate(LocalDate targetDate) {
         List<String> titles = new ArrayList<>();
 
@@ -105,6 +124,40 @@ public class CalendarApp_Draft {
         }
         return titles;
     }
+    
+    static void searchByTitle() {
+        System.out.print("Enter keyword in title: ");
+        String keyword = sc.nextLine().toLowerCase();
+
+        boolean found = false;
+        for (Event e : events) {
+            if (e.title.toLowerCase().contains(keyword)) {
+                System.out.println("Found: " + e.id + " | " + e.title + " | " + e.date + " | " + e.description);
+                found = true;
+            }
+        }
+        if (!found) System.out.println("No events found with keyword: " + keyword);
+    }
+    
+    static void searchByDate() {
+        System.out.print("Enter date (YYYY-MM-DD): ");
+        String dateInput = sc.nextLine();
+
+        try {
+            LocalDate targetDate = LocalDate.parse(dateInput);
+            boolean found = false;
+            for (Event e : events) {
+                if (e.date.equals(targetDate)) {
+                    System.out.println("Found: " + e.id + " | " + e.title + " | " + e.date + " | " + e.description);
+                    found = true;
+                }
+            }
+            if (!found) System.out.println("No events found on " + targetDate);
+        } catch (Exception e) {
+            System.out.println("Invalid date format.");
+        }
+    }
+
 
     static boolean checkRecurrence(LocalDate start, LocalDate current, Recurrence r) {
         long diff = 0;
