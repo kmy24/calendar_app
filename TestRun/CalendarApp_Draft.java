@@ -1,28 +1,39 @@
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-
 class Event {
+
     int id;
     String title;
-    String description; 
-    LocalDate date;     
+    String description;
+    LocalDate date;
 
-    Event(int id, String title, LocalDate date) {
+    LocalDateTime startDateTime;
+    LocalDateTime endDateTime;
+
+    Event(int id, String title, LocalDate date, LocalDateTime startDateTime,
+            LocalDateTime endDateTime) {
+
         this.id = id;
         this.title = title;
         this.date = date;
-        this.description = "No description"; 
+        this.description = "No description";
+        this.startDateTime = startDateTime;
+        this.endDateTime = endDateTime;
+
     }
 }
 
 class Recurrence {
+
     int eventId;
-    String interval;      
-    int count;           
-    LocalDate endDate;    
+    String interval;
+    int count;
+    LocalDate endDate;
 
     public Recurrence(int eventId, String interval, int count, LocalDate endDate) {
         this.eventId = eventId;
@@ -33,19 +44,15 @@ class Recurrence {
 }
 
 public class CalendarApp_Draft {
+
     static List<Event> events = new ArrayList<>();
-    
+
     static Map<Integer, Recurrence> recurrenceMap = new HashMap<>();
-    
+
     static Scanner sc = new Scanner(System.in);
     static int idCounter = 1;
 
     public static void main(String[] args) {
-        
-        Event e1 = new Event(idCounter++,"", LocalDate.now());
-        events.add(e1);
-        
-        recurrenceMap.put(e1.id, new Recurrence(e1.id, "1d", 3, null)); 
 
         while (true) {
             System.out.println("\n=== CALENDAR APP ===");
@@ -56,23 +63,29 @@ public class CalendarApp_Draft {
             System.out.println("5. Search Menu");
             System.out.println("6. Exit");
             System.out.print("Enter choice: ");
-            
+
             try {
                 int choice = sc.nextInt();
-                sc.nextLine(); 
+                sc.nextLine();
 
                 switch (choice) {
-    case 1 -> createEvent();
-    case 2 -> viewEvents();
-    case 3 -> updateEvent();   // NEW
-    case 4 -> deleteEvent();
-    case 5 -> searchMenu();
-    case 6 -> {
-        System.out.println("Exiting...");
-        System.exit(0);
-    }
-    default -> System.out.println("Invalid choice.");
-}
+                    case 1 ->
+                        createEvent();
+                    case 2 ->
+                        viewEvents();
+                    case 3 ->
+                        updateEvent();   // NEW
+                    case 4 ->
+                        deleteEvent();
+                    case 5 ->
+                        searchMenu();
+                    case 6 -> {
+                        System.out.println("Exiting...");
+                        System.exit(0);
+                    }
+                    default ->
+                        System.out.println("Invalid choice.");
+                }
 
             } catch (InputMismatchException e) {
                 System.out.println("Invalid input.");
@@ -82,22 +95,26 @@ public class CalendarApp_Draft {
     }
 
     static void searchMenu() {
-    System.out.println("\n--- Search Menu ---");
-    System.out.println("1. Search by ID");
-    System.out.println("2. Search by Title");
-    System.out.println("3. Search by Date");
-    System.out.print("Enter choice: ");
+        System.out.println("\n--- Search Menu ---");
+        System.out.println("1. Search by ID");
+        System.out.println("2. Search by Title");
+        System.out.println("3. Search by Date");
+        System.out.print("Enter choice: ");
 
-    int sChoice = sc.nextInt();
-    sc.nextLine();
+        int sChoice = sc.nextInt();
+        sc.nextLine();
 
-    switch (sChoice) {
-        case 1 -> searchEventById(); 
-        case 2 -> searchByTitle();
-        case 3 -> searchByDate();
-        default -> System.out.println("Invalid choice.");
+        switch (sChoice) {
+            case 1 ->
+                searchEventById();
+            case 2 ->
+                searchByTitle();
+            case 3 ->
+                searchByDate();
+            default ->
+                System.out.println("Invalid choice.");
+        }
     }
-}
 
     static List<String> getEventTitlesForDate(LocalDate targetDate) {
         List<String> titles = new ArrayList<>();
@@ -105,14 +122,11 @@ public class CalendarApp_Draft {
         for (Event e : events) {
             boolean isMatch = false;
 
-            
             if (e.date.equals(targetDate)) {
                 isMatch = true;
-            }
-         
-            else if (recurrenceMap.containsKey(e.id)) {
+            } else if (recurrenceMap.containsKey(e.id)) {
                 Recurrence r = recurrenceMap.get(e.id);
-                
+
                 if (targetDate.isAfter(e.date)) {
                     isMatch = checkRecurrence(e.date, targetDate, r);
                 }
@@ -124,7 +138,7 @@ public class CalendarApp_Draft {
         }
         return titles;
     }
-    
+
     static void searchByTitle() {
         System.out.print("Enter keyword in title: ");
         String keyword = sc.nextLine().toLowerCase();
@@ -136,9 +150,11 @@ public class CalendarApp_Draft {
                 found = true;
             }
         }
-        if (!found) System.out.println("No events found with keyword: " + keyword);
+        if (!found) {
+            System.out.println("No events found with keyword: " + keyword);
+        }
     }
-    
+
     static void searchByDate() {
         System.out.print("Enter date (YYYY-MM-DD): ");
         String dateInput = sc.nextLine();
@@ -152,16 +168,19 @@ public class CalendarApp_Draft {
                     found = true;
                 }
             }
-            if (!found) System.out.println("No events found on " + targetDate);
+            if (!found) {
+                System.out.println("No events found on " + targetDate);
+            }
         } catch (Exception e) {
             System.out.println("Invalid date format.");
         }
     }
 
     // SEARCH by ID
-        static void searchEventById() {
+    static void searchEventById() {
         System.out.print("Enter Event ID: ");
-        int id = sc.nextInt(); sc.nextLine();
+        int id = sc.nextInt();
+        sc.nextLine();
 
         boolean found = false;
         for (Event e : events) {
@@ -177,60 +196,82 @@ public class CalendarApp_Draft {
         }
     }
 
-
     static boolean checkRecurrence(LocalDate start, LocalDate current, Recurrence r) {
         long diff = 0;
         long unitAmount = 0;
 
-        
-        String unit = r.interval.substring(r.interval.length() - 1); 
+        String unit = r.interval.substring(r.interval.length() - 1);
         int value = Integer.parseInt(r.interval.substring(0, r.interval.length() - 1));
 
-        
         if (unit.equalsIgnoreCase("d")) {
             diff = ChronoUnit.DAYS.between(start, current);
-            unitAmount = value; 
+            unitAmount = value;
         } else if (unit.equalsIgnoreCase("w")) {
             diff = ChronoUnit.WEEKS.between(start, current);
-            
-            if(start.getDayOfWeek() != current.getDayOfWeek()) return false;
+
+            if (start.getDayOfWeek() != current.getDayOfWeek()) {
+                return false;
+            }
             unitAmount = value;
         } else if (unit.equalsIgnoreCase("m")) {
             diff = ChronoUnit.MONTHS.between(start, current);
-          
-            if(start.getDayOfMonth() != current.getDayOfMonth()) return false;
+
+            if (start.getDayOfMonth() != current.getDayOfMonth()) {
+                return false;
+            }
             unitAmount = value;
         }
 
-       
         if (diff > 0 && diff % unitAmount == 0) {
             long occurrencesSoFar = diff / unitAmount;
 
-            
             if (r.count > 0 && occurrencesSoFar > r.count) {
                 return false;
             }
-            
+
             if (r.endDate != null && current.isAfter(r.endDate)) {
                 return false;
             }
-            
-            return true; 
+
+            return true;
         }
 
         return false;
     }
 
-    
     static void createEvent() {
         try {
             System.out.print("Title: ");
             String title = sc.nextLine();
-            System.out.print("Date (YYYY-MM-DD): ");
-            LocalDate date = LocalDate.parse(sc.nextLine());
+
+            System.out.print("Start DateTime (YYYY-MM-DD HH:MM): ");
+            String startInput = sc.nextLine();
+
+            System.out.print("End DateTime (YYYY-MM-DD HH:MM): ");
+            String endInput = sc.nextLine();
+
+            LocalDateTime startDT
+                    = LocalDateTime.parse(startInput.replace(" ", "T"));
+            LocalDateTime endDT
+                    = LocalDateTime.parse(endInput.replace(" ", "T"));
+
+            if (endDT.isBefore(startDT)) {
+                System.out.println("❌ End time cannot be before start time.");
+                return;
+            }
+
+            // IMPORTANT: keep LocalDate for recurrence logic
+            LocalDate date = startDT.toLocalDate();
 
             int newId = idCounter++;
-            events.add(new Event(newId, title, date));
+
+            events.add(new Event(
+                    newId,
+                    title,
+                    date,
+                    startDT,
+                    endDT
+            ));
 
             System.out.print("Is this a recurring event? (y/n): ");
             String isRecur = sc.nextLine();
@@ -241,41 +282,43 @@ public class CalendarApp_Draft {
 
                 System.out.println("End condition type: 1. Count (Times)  2. Until Date");
                 int type = sc.nextInt();
-                sc.nextLine(); 
+                sc.nextLine();
 
-                int count = 0;
+                int times = 0;
                 LocalDate endDate = null;
 
                 if (type == 1) {
-                    System.out.print("How many times to repeat (after first): ");
-                    count = sc.nextInt();
+                    System.out.print("How many times to repeat: ");
+                    times = sc.nextInt();
                     sc.nextLine();
                 } else {
                     System.out.print("Recur until (YYYY-MM-DD): ");
                     endDate = LocalDate.parse(sc.nextLine());
                 }
 
-                
-                recurrenceMap.put(newId, new Recurrence(newId, interval, count, endDate));
+                recurrenceMap.put(newId,
+                        new Recurrence(newId, interval, times, endDate));
             }
 
-            System.out.println("Event created with ID : " +newId);
+            System.out.println("Event created with ID: " + newId);
 
         } catch (DateTimeParseException e) {
-            System.out.println("Invalid date format.");
+            System.out.println("Invalid date-time format.");
         } catch (Exception e) {
             System.out.println("Error creating event: " + e.getMessage());
         }
     }
 
-    
     static void viewEvents() {
         System.out.println("1. Weekly View  2. Monthly View");
         int choice = sc.nextInt();
         sc.nextLine();
 
-        if (choice == 1) viewWeek();
-        else viewMonth();
+        if (choice == 1) {
+            viewWeek();
+        } else {
+            viewMonth();
+        }
     }
 
     static void viewWeek() {
@@ -286,13 +329,15 @@ public class CalendarApp_Draft {
         System.out.println("\n--- Week of " + weekStart + " ---");
         for (int i = 0; i < 7; i++) {
             LocalDate day = weekStart.plusDays(i);
-            
-            
+
             List<String> titles = getEventTitlesForDate(day);
 
-            System.out.print(day + " (" + day.getDayOfWeek().toString().substring(0,3) + "): ");
-            if (titles.isEmpty()) System.out.println("-");
-            else System.out.println(String.join(", ", titles));
+            System.out.print(day + " (" + day.getDayOfWeek().toString().substring(0, 3) + "): ");
+            if (titles.isEmpty()) {
+                System.out.println("-");
+            } else {
+                System.out.println(String.join(", ", titles));
+            }
         }
     }
 
@@ -306,7 +351,7 @@ public class CalendarApp_Draft {
         int daysInMonth = firstDay.lengthOfMonth();
 
         System.out.println("\nEvents in " + firstDay.getMonth() + " " + year + ":");
-        
+
         for (int i = 1; i <= daysInMonth; i++) {
             LocalDate current = LocalDate.of(year, month, i);
             List<String> titles = getEventTitlesForDate(current);
@@ -316,135 +361,165 @@ public class CalendarApp_Draft {
             }
         }
     }
+
     static void updateEvent() {
-    System.out.println("\n--- Update Event ---");
-    System.out.print("Enter Event ID to update: ");
+        System.out.println("\n--- Update Event ---");
+        System.out.print("Enter Event ID to update: ");
 
-    try {
-        int id = sc.nextInt();
-        sc.nextLine(); // consume newline
+        try {
+            int id = sc.nextInt();
+            sc.nextLine(); // consume newline
 
-        Event target = null;
+            Event target = null;
 
-        // Find event
-        for (Event e : events) {
-            if (e.id == id) {
-                target = e;
-                break;
-            }
-        }
-
-        if (target == null) {
-            System.out.println("❌ Event with ID " + id + " not found.");
-            return;
-        }
-
-        // Update title
-        System.out.print(
-            "New Title (press Enter to keep current: \"" + target.title + "\"): "
-        );
-        String newTitle = sc.nextLine();
-        if (!newTitle.trim().isEmpty()) {
-            target.title = newTitle.trim();
-        }
-
-        // Update description
-        System.out.print(
-            "New Description (press Enter to keep current): "
-        );
-        String newDesc = sc.nextLine();
-        if (!newDesc.trim().isEmpty()) {
-            target.description = newDesc.trim();
-        }
-
-        // Update date (with validation)
-        while (true) {
-            System.out.print(
-                "New Date (YYYY-MM-DD, press Enter to keep current: " 
-                + target.date + "): "
-            );
-            String dateInput = sc.nextLine().trim();
-
-            if (dateInput.isEmpty()) break;
-
-            try {
-                target.date = LocalDate.parse(dateInput);
-                break;
-            } catch (DateTimeParseException e) {
-                System.out.println("⚠ Invalid date format. Try again.");
-            }
-        }
-
-        // Update recurrence if exists
-        if (recurrenceMap.containsKey(id)) {
-            System.out.print("Update recurrence? (y/n): ");
-            String choice = sc.nextLine();
-
-            if (choice.equalsIgnoreCase("y")) {
-                System.out.print("New interval (e.g., 1d, 2w, 1m): ");
-                String interval = sc.nextLine();
-
-                System.out.println("End condition: 1. Count  2. Until Date");
-                int type = sc.nextInt();
-                sc.nextLine();
-
-                int count = 0;
-                LocalDate endDate = null;
-
-                if (type == 1) {
-                    System.out.print("Repeat how many times: ");
-                    count = sc.nextInt();
-                    sc.nextLine();
-                } else {
-                    System.out.print("Recur until (YYYY-MM-DD): ");
-                    endDate = LocalDate.parse(sc.nextLine());
-                }
-
-                recurrenceMap.put(id, new Recurrence(id, interval, count, endDate));
-            }
-        }
-
-        System.out.println("✅ Event updated successfully.");
-
-    } catch (InputMismatchException e) {
-        System.out.println("❌ Invalid ID. Please enter a number.");
-        sc.nextLine();
-    }
-}
-
-    
-    static void deleteEvent() {
-        System.out.print("Enter Event ID to delete: ");
-        int id = sc.nextInt();
-        sc.nextLine();
-        
-        Event deletedEvent = null;
-        for (Event e : events) {
+            // Find event
+            for (Event e : events) {
                 if (e.id == id) {
-                    deletedEvent = e;
+                    target = e;
                     break;
                 }
             }
 
-            if (deletedEvent != null) {
-                System.out.println("You are about to delete: " + deletedEvent.title + " on " + deletedEvent.date);
-                System.out.print("Are you sure? (y/n): ");
-                String confirm = sc.nextLine();
-                if (!confirm.equalsIgnoreCase("y")) {
-                    System.out.println("Deletion cancelled.");
-                    return;
+            if (target == null) {
+                System.out.println("❌ Event with ID " + id + " not found.");
+                return;
+            }
+
+            // Update title
+            System.out.print(
+                    "New Title (press Enter to keep current: \"" + target.title + "\"): "
+            );
+            String newTitle = sc.nextLine();
+            if (!newTitle.trim().isEmpty()) {
+                target.title = newTitle.trim();
+            }
+
+            // Update description
+            System.out.print(
+                    "New Description (press Enter to keep current): "
+            );
+            String newDesc = sc.nextLine();
+            if (!newDesc.trim().isEmpty()) {
+                target.description = newDesc.trim();
+            }
+
+            // Update date (with validation)
+            while (true) {
+                System.out.print(
+                        "New Date (YYYY-MM-DD, press Enter to keep current: "
+                        + target.date + "): "
+                );
+                String dateInput = sc.nextLine().trim();
+
+                if (dateInput.isEmpty()) {
+                    break;
+                }
+
+                try {
+                    target.date = LocalDate.parse(dateInput);
+                    break;
+                } catch (DateTimeParseException e) {
+                    System.out.println("⚠ Invalid date format. Try again.");
                 }
             }
-       
+            // Update startDateTime
+            System.out.print(
+                    "New Start DateTime (YYYY-MM-DD HH:MM, press Enter to keep current: "
+                    + target.startDateTime + "): "
+            );
+            String newStart = sc.nextLine().trim();
+
+            if (!newStart.isEmpty()) {
+                target.startDateTime
+                        = LocalDateTime.parse(newStart.replace(" ", "T"));
+
+                // keep LocalDate in sync for recurrence logic
+                target.date = target.startDateTime.toLocalDate();
+            }
+
+            // Update endDateTime
+            System.out.print(
+                    "New End DateTime (YYYY-MM-DD HH:MM, press Enter to keep current: "
+                    + target.endDateTime + "): "
+            );
+            String newEnd = sc.nextLine().trim();
+
+            if (!newEnd.isEmpty()) {
+                target.endDateTime
+                        = LocalDateTime.parse(newEnd.replace(" ", "T"));
+            }
+
+            // Update recurrence if exists
+            if (recurrenceMap.containsKey(id)) {
+                System.out.print("Update recurrence? (y/n): ");
+                String choice = sc.nextLine();
+
+                if (choice.equalsIgnoreCase("y")) {
+                    System.out.print("New interval (e.g., 1d, 2w, 1m): ");
+                    String interval = sc.nextLine();
+
+                    System.out.println("End condition: 1. Count  2. Until Date");
+                    int type = sc.nextInt();
+                    sc.nextLine();
+
+                    int count = 0;
+                    LocalDate endDate = null;
+
+                    if (type == 1) {
+                        System.out.print("Repeat how many times: ");
+                        count = sc.nextInt();
+                        sc.nextLine();
+                    } else {
+                        System.out.print("Recur until (YYYY-MM-DD): ");
+                        endDate = LocalDate.parse(sc.nextLine());
+                    }
+
+                    recurrenceMap.put(id, new Recurrence(id, interval, count, endDate));
+                }
+            }
+
+            System.out.println("✅ Event updated successfully.");
+
+        } catch (InputMismatchException e) {
+            System.out.println("❌ Invalid ID. Please enter a number.");
+            sc.nextLine();
+        }
+    }
+
+    static void deleteEvent() {
+        System.out.print("Enter Event ID to delete: ");
+        int id = sc.nextInt();
+        sc.nextLine();
+
+        Event deletedEvent = null;
+        for (Event e : events) {
+            if (e.id == id) {
+                deletedEvent = e;
+                break;
+            }
+        }
+
+        if (deletedEvent != null) {
+            System.out.println("You are about to delete: " + deletedEvent.title + " on " + deletedEvent.date);
+            System.out.print("Are you sure? (y/n): ");
+            String confirm = sc.nextLine();
+            if (!confirm.equalsIgnoreCase("y")) {
+                System.out.println("Deletion cancelled.");
+                return;
+            }
+        }
+
         boolean removed = events.removeIf(e -> e.id == id);
-        
-        
+
         if (recurrenceMap.containsKey(id)) {
             recurrenceMap.remove(id);
             System.out.println("Recurrence rule removed.");
         }
 
-        if (removed) System.out.println("Event deleted.");
-        else System.out.println("ID not found.");
+        if (removed) {
+            System.out.println("Event deleted.");
+        } else {
+            System.out.println("ID not found.");
+        }
     }
 }
