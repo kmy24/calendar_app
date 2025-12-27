@@ -259,7 +259,7 @@ public class CalendarApp_Draft {
                 recurrenceMap.put(newId, new Recurrence(newId, interval, count, endDate));
             }
 
-            System.out.println("Event created!");
+            System.out.println("Event created with ID : " +newId);
 
         } catch (DateTimeParseException e) {
             System.out.println("Invalid date format.");
