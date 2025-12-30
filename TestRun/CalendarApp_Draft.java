@@ -4,6 +4,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 class Event {
 
@@ -61,7 +65,9 @@ public class CalendarApp_Draft {
             System.out.println("3. Update Event");
             System.out.println("4. Delete Event");
             System.out.println("5. Search Menu");
-            System.out.println("6. Exit");
+            System.out.println("6. Backup Events");
+            System.out.println("7. Restore Events");
+            System.out.println("8. Exit");
             System.out.print("Enter choice: ");
 
             try {
@@ -79,7 +85,11 @@ public class CalendarApp_Draft {
                         deleteEvent();
                     case 5 ->
                         searchMenu();
-                    case 6 -> {
+                    case 6 ->
+                        backupEvents();
+                    case 7 ->
+                        restoreEvents();
+                    case 8 -> {
                         System.out.println("Exiting...");
                         System.exit(0);
                     }
@@ -521,5 +531,16 @@ public class CalendarApp_Draft {
         } else {
             System.out.println("ID not found.");
         }
+    }
+    
+    static void backupEvents() {
+    try (PrintWriter pw = new PrintWriter("events_backup.txt")) {
+        for (Event e : events) {
+            pw.println(e.id + "," + e.title + "," + e.date);
+        }
+        System.out.println("Backup successful!");
+    } catch (IOException e) {
+        System.out.println("Error while backing up: " + e.getMessage());
+      }
     }
 }
