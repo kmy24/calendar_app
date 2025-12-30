@@ -4,10 +4,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
 
 class Event {
 
@@ -30,17 +26,6 @@ class Event {
         this.endDateTime = endDateTime;
 
     }
-    Event(int id, String title, LocalDate date) {
-    this.id = id;
-    this.title = title;
-    this.date = date;
-    this.description = "No description";
-
-    // default times for restored events
-    this.startDateTime = date.atStartOfDay();
-    this.endDateTime = date.atTime(23, 59);
-}
-
 }
 
 class Recurrence {
@@ -58,7 +43,7 @@ class Recurrence {
     }
 }
 
-public class CalendarApp_Draft {
+public class CalendarApp_Draft2 {
 
     static List<Event> events = new ArrayList<>();
 
@@ -76,9 +61,7 @@ public class CalendarApp_Draft {
             System.out.println("3. Update Event");
             System.out.println("4. Delete Event");
             System.out.println("5. Search Menu");
-            System.out.println("6. Backup Events");
-            System.out.println("7. Restore Events");
-            System.out.println("8. Exit");
+            System.out.println("6. Exit");
             System.out.print("Enter choice: ");
 
             try {
@@ -96,11 +79,7 @@ public class CalendarApp_Draft {
                         deleteEvent();
                     case 5 ->
                         searchMenu();
-                    case 6 ->
-                        backupEvents();
-                    case 7 ->
-                        restoreEvents();
-                    case 8 -> {
+                    case 6 -> {
                         System.out.println("Exiting...");
                         System.exit(0);
                     }
@@ -359,7 +338,6 @@ public class CalendarApp_Draft {
             } else {
                 System.out.println(String.join(", ", titles));
             }
-
         }
     }
 
@@ -544,39 +522,4 @@ public class CalendarApp_Draft {
             System.out.println("ID not found.");
         }
     }
-    
-    static void backupEvents() {
-    try (PrintWriter pw = new PrintWriter("events_backup.txt")) {
-        for (Event e : events) {
-            pw.println(e.id + "," + e.title + "," + e.date);
-        }
-        System.out.println("Backup successful!");
-    } catch (IOException e) {
-        System.out.println("Error while backing up: " + e.getMessage());
-      }
-    }
-    static void restoreEvents() {
-    try (Scanner fileScanner = new Scanner(new File("events_backup.txt"))) {
-        events.clear(); // clear current memory
-        idCounter = 1;
-
-        while (fileScanner.hasNextLine()) {
-            String line = fileScanner.nextLine();
-            String[] parts = line.split(",", 3);
-            if (parts.length == 3) {
-                int id = Integer.parseInt(parts[0]);
-                String title = parts[1];
-                LocalDate date = LocalDate.parse(parts[2]);
-
-                events.add(new Event(id, title, date));
-                if (id >= idCounter) idCounter = id + 1;
-            }
-        }
-        System.out.println("Restore successful!");
-    } catch (FileNotFoundException e) {
-        System.out.println("No backup file found.");
-    } catch (Exception e) {
-        System.out.println("Error while restoring: " + e.getMessage());
-    }
-}
 }
