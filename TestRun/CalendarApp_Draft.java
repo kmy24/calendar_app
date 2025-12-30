@@ -371,9 +371,29 @@ public class CalendarApp_Draft {
 
         LocalDate firstDay = LocalDate.of(year, month, 1);
         int daysInMonth = firstDay.lengthOfMonth();
+        int startDay = firstDay.getDayOfWeek().getValue() % 7;
 
         System.out.println("\nEvents in " + firstDay.getMonth() + " " + year + ":");
+        System.out.println("SUN MON TUE WED THU FRI SAT");
 
+        for (int i = 0; i < startDay; i++) {
+            System.out.print("   ");
+        }
+        for (int day = 1; day <= daysInMonth; day++) {
+    LocalDate current = LocalDate.of(year, month, day);
+    List<String> titles = getEventTitlesForDate(current);
+
+    if (!titles.isEmpty()) {
+        System.out.printf("%3d*", day);   
+    } else {
+        System.out.printf("%3d ", day);   
+    }
+
+    if ((day + startDay) % 7 == 0) {     
+        System.out.println();             
+    }
+}
+        System.out.println();
         for (int i = 1; i <= daysInMonth; i++) {
             LocalDate current = LocalDate.of(year, month, i);
             List<String> titles = getEventTitlesForDate(current);
