@@ -215,9 +215,30 @@ public class CalendarApp_Draft {
             
             List<String> titles = getEventTitlesForDate(day);
 
+<<<<<<< HEAD
             System.out.print(day + " (" + day.getDayOfWeek().toString().substring(0,3) + "): ");
             if (titles.isEmpty()) System.out.println("-");
             else System.out.println(String.join(", ", titles));
+=======
+            List<Event> eventsToday = new ArrayList<>();
+            for (Event e : events) {
+                if (e.date.equals(day)) {
+                    eventsToday.add(e);
+                }
+            }
+
+            System.out.print(dayName + " " + String.format("%02d", day.getDayOfMonth()) + ": ");
+            if (eventsToday.isEmpty()) {
+                System.out.println("No events");
+            } else {
+                for (int j = 0; j < eventsToday.size(); j++) {
+                    System.out.print(eventsToday.get(j).title);
+                    if (j < eventsToday.size() - 1) System.out.print(", ");
+                }
+                System.out.println();
+            }
+
+>>>>>>> f521882 (fixing miss alignment (viewmonth))
         }
     }
 
@@ -230,6 +251,7 @@ public class CalendarApp_Draft {
         LocalDate firstDay = LocalDate.of(year, month, 1);
         int daysInMonth = firstDay.lengthOfMonth();
 
+<<<<<<< HEAD
         System.out.println("\nEvents in " + firstDay.getMonth() + " " + year + ":");
         
         for (int i = 1; i <= daysInMonth; i++) {
@@ -238,6 +260,28 @@ public class CalendarApp_Draft {
 
             if (!titles.isEmpty()) {
                 System.out.println(String.format("%02d", i) + ": " + String.join(", ", titles));
+=======
+        System.out.println("\n" + firstDay.getMonth() + " " + year);
+        System.out.println("Sun Mon Tue Wed Thu Fri Sat ");
+
+        for (int i = 0; i < startDay; i++) {
+            System.out.print("    ");
+        }
+
+        for (int day = 1; day <= lengthOfMonth; day++) {
+            LocalDate current = LocalDate.of(year, month, day);
+            boolean hasEvent = events.stream().anyMatch(e -> e.date.equals(current));
+            System.out.printf("%2d%s ", day, hasEvent ? "*" : " ");
+
+            if ((day + startDay) % 7 == 0) System.out.println();
+        }
+        System.out.println();
+
+        // List events below calendar
+        for (Event e : events) {
+            if (e.date.getMonthValue() == month && e.date.getYear() == year) {
+                System.out.println("* " + e.date.getDayOfMonth() + ": " + e.title);
+>>>>>>> f521882 (fixing miss alignment (viewmonth))
             }
         }
     }
