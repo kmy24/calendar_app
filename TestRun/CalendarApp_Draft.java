@@ -4,10 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 
 class Event {
 
@@ -15,35 +12,49 @@ class Event {
     String title;
     String description;
     LocalDate date;
-
     LocalDateTime startDateTime;
     LocalDateTime endDateTime;
 
-    Event(int id, String title, LocalDate date, LocalDateTime startDateTime,
+    Event(int id, String title, String description, LocalDateTime startDateTime,
             LocalDateTime endDateTime) {
 
         this.id = id;
         this.title = title;
-        this.date = date;
-        this.description = "No description";
+        this.description = description;
         this.startDateTime = startDateTime;
         this.endDateTime = endDateTime;
+        this.date = startDateTime.toLocalDate();
 
     }
+    Event(int id, String title, LocalDate date) {
+    this.id = id;
+    this.title = title;
+    this.date = date;
+    this.description = "No description";
+
+    // default times for restored events
+    this.startDateTime = date.atStartOfDay();
+    this.endDateTime = date.atTime(23, 59);
+}
+
 }
 
 class Recurrence {
 
     int eventId;
-    String interval;
-    int count;
-    LocalDate endDate;
+    String recurrentInterval; //e.g 1d,1w
+    int recurrentTimes;       // 0 if unused
+    String recurrentEndDate; // YYYY-MM-DD or "0"
 
-    public Recurrence(int eventId, String interval, int count, LocalDate endDate) {
+    public Recurrence(int eventId, String interval, int times, String endDate) {
         this.eventId = eventId;
-        this.interval = interval;
-        this.count = count;
-        this.endDate = endDate;
+        this.recurrentInterval = interval;
+        this.recurrentTimes = times;
+        this.recurrentEndDate = endDate;
+    }
+
+    Recurrence(int id, String interval, int count, LocalDate endDate) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }
 
@@ -54,7 +65,7 @@ public class CalendarApp_Draft {
     static Map<Integer, Recurrence> recurrenceMap = new HashMap<>();
 
     static Scanner sc = new Scanner(System.in);
-    static int idCounter = 1;
+    static int idCounter = loadNextEventId();
 
     public static void main(String[] args) {
 
@@ -101,6 +112,56 @@ public class CalendarApp_Draft {
                 System.out.println("Invalid input.");
                 sc.nextLine();
             }
+        }
+    }
+
+    static int loadNextEventId() {
+        File file = new File("event.csv");
+        int maxId = 0;
+
+        if (!file.exists()) {
+            return 1;
+        }
+
+        try (Scanner fs = new Scanner(file)) {
+            fs.nextLine(); // header
+            while (fs.hasNextLine()) {
+                String[] parts = fs.nextLine().split(",");
+                maxId = Math.max(maxId, Integer.parseInt(parts[0]));
+            }
+        } catch (Exception ignored) {
+        }
+
+        return maxId + 1;
+    }
+
+    static void saveEventToCSV(Event e) {
+        boolean exists = new File("event.csv").exists();
+
+        try (PrintWriter pw = new PrintWriter(new FileOutputStream("event.csv", true))) {
+            if (!exists) {
+                pw.println("eventId,title,description,startDateTime,endDateTime");
+            }
+
+            pw.println(e.id + "," + e.title + "," + e.description + ","
+                    + e.startDateTime + "," + e.endDateTime);
+        } catch (IOException e1) {
+            System.out.println("Error saving event.csv");
+        }
+    }
+
+    static void saveRecurrenceToCSV(Recurrence r) {
+        boolean exists = new File("recurrent.csv").exists();
+
+        try (PrintWriter pw = new PrintWriter(new FileOutputStream("recurrent.csv", true))) {
+            if (!exists) {
+                pw.println("eventId,recurrentInterval,recurrentTimes,recurrentEndDate");
+            }
+
+            pw.println(r.eventId + "," + r.recurrentInterval + ","
+                    + r.recurrentTimes + "," + r.recurrentEndDate);
+        } catch (IOException e) {
+            System.out.println("Error saving recurrent.csv");
         }
     }
 
@@ -207,46 +268,37 @@ public class CalendarApp_Draft {
     }
 
     static boolean checkRecurrence(LocalDate start, LocalDate current, Recurrence r) {
-        long diff = 0;
-        long unitAmount = 0;
 
-        String unit = r.interval.substring(r.interval.length() - 1);
-        int value = Integer.parseInt(r.interval.substring(0, r.interval.length() - 1));
+        String interval = r.recurrentInterval;
+        int value = Integer.parseInt(interval.substring(0, interval.length() - 1));
+        String unit = interval.substring(interval.length() - 1);
 
-        if (unit.equalsIgnoreCase("d")) {
-            diff = ChronoUnit.DAYS.between(start, current);
-            unitAmount = value;
-        } else if (unit.equalsIgnoreCase("w")) {
-            diff = ChronoUnit.WEEKS.between(start, current);
+        long diff = switch (unit) {
+            case "d" ->
+                ChronoUnit.DAYS.between(start, current);
+            case "w" ->
+                ChronoUnit.WEEKS.between(start, current);
+            case "m" ->
+                ChronoUnit.MONTHS.between(start, current);
+            default ->
+                0;
+        };
 
-            if (start.getDayOfWeek() != current.getDayOfWeek()) {
-                return false;
-            }
-            unitAmount = value;
-        } else if (unit.equalsIgnoreCase("m")) {
-            diff = ChronoUnit.MONTHS.between(start, current);
-
-            if (start.getDayOfMonth() != current.getDayOfMonth()) {
-                return false;
-            }
-            unitAmount = value;
+        if (diff <= 0 || diff % value != 0) {
+            return false;
         }
 
-        if (diff > 0 && diff % unitAmount == 0) {
-            long occurrencesSoFar = diff / unitAmount;
-
-            if (r.count > 0 && occurrencesSoFar > r.count) {
-                return false;
-            }
-
-            if (r.endDate != null && current.isAfter(r.endDate)) {
-                return false;
-            }
-
-            return true;
+        if (r.recurrentTimes > 0 && diff / value > r.recurrentTimes) {
+            return false;
         }
 
-        return false;
+        if (!r.recurrentEndDate.equals("0")) {
+            LocalDate endDate = LocalDate.parse(r.recurrentEndDate);
+            if (current.isAfter(endDate)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     static void createEvent() {
@@ -254,68 +306,55 @@ public class CalendarApp_Draft {
             System.out.print("Title: ");
             String title = sc.nextLine();
 
-            System.out.print("Start DateTime (YYYY-MM-DD HH:MM): ");
-            String startInput = sc.nextLine();
+            System.out.print("Description: ");
+            String desc = sc.nextLine();
 
-            System.out.print("End DateTime (YYYY-MM-DD HH:MM): ");
-            String endInput = sc.nextLine();
+            System.out.print("Start (YYYY-MM-DD HH:MM): ");
+            LocalDateTime start = LocalDateTime.parse(sc.nextLine().replace(" ", "T"));
 
-            LocalDateTime startDT
-                    = LocalDateTime.parse(startInput.replace(" ", "T"));
-            LocalDateTime endDT
-                    = LocalDateTime.parse(endInput.replace(" ", "T"));
+            System.out.print("End (YYYY-MM-DD HH:MM): ");
+            LocalDateTime end = LocalDateTime.parse(sc.nextLine().replace(" ", "T"));
 
-            if (endDT.isBefore(startDT)) {
-                System.out.println("❌ End time cannot be before start time.");
+            if (end.isBefore(start)) {
+                System.out.println("End before start!");
                 return;
             }
 
-            // IMPORTANT: keep LocalDate for recurrence logic
-            LocalDate date = startDT.toLocalDate();
+            int id = idCounter++;
+            Event e = new Event(id, title, desc, start, end);
+            events.add(e);
+            saveEventToCSV(e);
 
-            int newId = idCounter++;
-
-            events.add(new Event(
-                    newId,
-                    title,
-                    date,
-                    startDT,
-                    endDT
-            ));
-
-            System.out.print("Is this a recurring event? (y/n): ");
-            String isRecur = sc.nextLine();
-
-            if (isRecur.equalsIgnoreCase("y")) {
-                System.out.print("Interval (e.g., 1d, 2w, 1m): ");
+            System.out.print("Recurring? (y/n): ");
+            if (sc.nextLine().equalsIgnoreCase("y")) {
+                System.out.print("Interval (1d/1w/1m): ");
                 String interval = sc.nextLine();
 
-                System.out.println("End condition type: 1. Count (Times)  2. Until Date");
+                System.out.println("1. Times  2. Until Date");
                 int type = sc.nextInt();
                 sc.nextLine();
 
                 int times = 0;
-                LocalDate endDate = null;
+                String endDate = "0";   // STRING on purpose
 
                 if (type == 1) {
-                    System.out.print("How many times to repeat: ");
+                    System.out.print("Times: ");
                     times = sc.nextInt();
                     sc.nextLine();
                 } else {
-                    System.out.print("Recur until (YYYY-MM-DD): ");
-                    endDate = LocalDate.parse(sc.nextLine());
+                    System.out.print("Until (YYYY-MM-DD): ");
+                    endDate = sc.nextLine(); 
                 }
 
-                recurrenceMap.put(newId,
-                        new Recurrence(newId, interval, times, endDate));
+                Recurrence r = new Recurrence(id, interval, times, endDate);
+                recurrenceMap.put(id, r);
+                saveRecurrenceToCSV(r);
             }
 
-            System.out.println("Event created with ID: " + newId);
+            System.out.println("Event created with ID: " + id);
 
-        } catch (DateTimeParseException e) {
-            System.out.println("Invalid date-time format.");
         } catch (Exception e) {
-            System.out.println("Error creating event: " + e.getMessage());
+            System.out.println("Invalid input.");
         }
     }
 
@@ -396,19 +435,19 @@ public class CalendarApp_Draft {
             System.out.print("   ");
         }
         for (int day = 1; day <= daysInMonth; day++) {
-    LocalDate current = LocalDate.of(year, month, day);
-    List<String> titles = getEventTitlesForDate(current);
+            LocalDate current = LocalDate.of(year, month, day);
+            List<String> titles = getEventTitlesForDate(current);
 
-    if (!titles.isEmpty()) {
-        System.out.printf("%3d*", day);   
-    } else {
-        System.out.printf("%3d ", day);   
-    }
+            if (!titles.isEmpty()) {
+                System.out.printf("%3d*", day);
+            } else {
+                System.out.printf("%3d ", day);
+            }
 
-    if ((day + startDay) % 7 == 0) {     
-        System.out.println();             
-    }
-}
+            if ((day + startDay) % 7 == 0) {
+                System.out.println();
+            }
+        }
         System.out.println();
         for (int i = 1; i <= daysInMonth; i++) {
             LocalDate current = LocalDate.of(year, month, i);
@@ -442,72 +481,7 @@ public class CalendarApp_Draft {
         }
     }
 
-    static void updateEvent() {
-        System.out.print("Enter the CSV filename to update from (e.g., update_events.csv): ");
-        String fileName = sc.nextLine();
-        File file = new File(fileName);
-
-        if (!file.exists()) {
-            System.out.println("❌ File not found.");
-            return;
-        }
-
-        int updatedCount = 0;
-        int notFoundCount = 0;
-
-        try (Scanner fileScanner = new Scanner(file)) {
-            // Skip header if it exists
-            if (fileScanner.hasNextLine()) {
-                fileScanner.nextLine(); 
-            }
-
-            while (fileScanner.hasNextLine()) {
-                String line = fileScanner.nextLine();
-                // split by comma, assuming no commas are inside the text fields
-                String[] parts = line.split(",");
-
-                if (parts.length >= 5) {
-                    try {
-                        int id = Integer.parseInt(parts[0].trim());
-                        String newTitle = parts[1].trim();
-                        String newDesc = parts[2].trim();
-                        LocalDateTime newStart = LocalDateTime.parse(parts[3].trim().replace(" ", "T"));
-                        LocalDateTime newEnd = LocalDateTime.parse(parts[4].trim().replace(" ", "T"));
-
-                        // Find the event in memory
-                        Event target = null;
-                        for (Event e : events) {
-                            if (e.id == id) {
-                                target = e;
-                                break;
-                            }
-                        }
-
-                        if (target != null) {
-                            target.title = newTitle;
-                            target.description = newDesc;
-                            target.startDateTime = newStart;
-                            target.endDateTime = newEnd;
-                            target.date = newStart.toLocalDate(); // keep date in sync
-                            updatedCount++;
-                        } else {
-                            notFoundCount++;
-                        }
-                    } catch (Exception parseError) {
-                        System.out.println("⚠ Skipping malformed row: " + line);
-                    }
-                }
-            }
-            System.out.println("✅ Batch Update Complete.");
-            System.out.println("Successfully updated: " + updatedCount);
-            if (notFoundCount > 0) {
-                System.out.println("IDs not found in system: " + notFoundCount);
-            }
-
-        } catch (FileNotFoundException e) {
-            System.out.println("❌ Error reading file: " + e.getMessage());
-        }
-    }
+    
 
     static void deleteEvent() {
         System.out.print("Enter Event ID to delete: ");
@@ -545,7 +519,7 @@ public class CalendarApp_Draft {
             System.out.println("ID not found.");
         }
     }
-    
+
     static void backupEvents() {
     try (PrintWriter pw = new PrintWriter("events_backup.txt")) {
         for (Event e : events) {
@@ -556,4 +530,28 @@ public class CalendarApp_Draft {
         System.out.println("Error while backing up: " + e.getMessage());
       }
     }
+    static void restoreEvents() {
+    try (Scanner fileScanner = new Scanner(new File("events_backup.txt"))) {
+        events.clear(); // clear current memory
+        idCounter = 1;
+
+        while (fileScanner.hasNextLine()) {
+            String line = fileScanner.nextLine();
+            String[] parts = line.split(",", 3);
+            if (parts.length == 3) {
+                int id = Integer.parseInt(parts[0]);
+                String title = parts[1];
+                LocalDate date = LocalDate.parse(parts[2]);
+
+                events.add(new Event(id, title, date));
+                if (id >= idCounter) idCounter = id + 1;
+            }
+        }
+        System.out.println("Restore successful!");
+    } catch (FileNotFoundException e) {
+        System.out.println("No backup file found.");
+    } catch (Exception e) {
+        System.out.println("Error while restoring: " + e.getMessage());
+    }
+}
 }
