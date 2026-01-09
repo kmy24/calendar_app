@@ -165,6 +165,31 @@ public class CalendarApp_Draft {
             System.out.println("Error saving recurrent.csv");
         }
     }
+    
+    static void rewriteEventCSV() {
+        try (PrintWriter pw = new PrintWriter("event.csv")) {
+            pw.println("eventId,title,description,startDateTime,endDateTime");
+            for (Event e : events) {
+                pw.println(e.id + "," + e.title + "," + e.description + ","
+                        + e.startDateTime + "," + e.endDateTime);
+            }
+        } catch (IOException e) {
+            System.out.println("Error rewriting event.csv");
+        }
+    }
+
+    static void rewriteRecurrenceCSV() {
+        try (PrintWriter pw = new PrintWriter("recurrent.csv")) {
+            pw.println("eventId,recurrentInterval,recurrentTimes,recurrentEndDate");
+            for (Recurrence r : recurrenceMap.values()) {
+                pw.println(r.eventId + "," + r.recurrentInterval + ","
+                        + r.recurrentTimes + "," + r.recurrentEndDate);
+            }
+        } catch (IOException e) {
+            System.out.println("Error rewriting recurrent.csv");
+        }
+    }
+
 
     static void searchMenu() {
         System.out.println("\n--- Search Menu ---");
@@ -589,10 +614,14 @@ public class CalendarApp_Draft {
 
         if (removed) {
             System.out.println("Event deleted.");
+            // keep CSV files in sync
+            rewriteEventCSV();
+            rewriteRecurrenceCSV();
         } else {
             System.out.println("ID not found.");
         }
     }
+
 
     static void backupEvents() {
         try (PrintWriter pw = new PrintWriter("events_backup.txt")) {
