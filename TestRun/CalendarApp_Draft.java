@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-=======
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -460,130 +457,117 @@ public class CalendarApp_Draft {
         }
     }
 
-    static void updateEvent() {
-        System.out.println("\n--- Update Event ---");
-        System.out.print("Enter Event ID to update: ");
+        static void updateEvent() {
+    System.out.println("\n--- Update Event ---");
+    System.out.print("Enter Event ID to update: ");
 
-        try {
-            int id = sc.nextInt();
-            sc.nextLine(); // consume newline
+    try {
+        int id = sc.nextInt();
+        sc.nextLine(); 
 
-            Event target = null;
-
-            // Find event
-            for (Event e : events) {
-                if (e.id == id) {
-                    target = e;
-                    break;
-                }
+        Event target = null;
+        for (Event e : events) {
+            if (e.id == id) {
+                target = e;
+                break;
             }
-
-            if (target == null) {
-                System.out.println("❌ Event with ID " + id + " not found.");
-                return;
-            }
-
-            // Update title
-            System.out.print(
-                    "New Title (press Enter to keep current: \"" + target.title + "\"): "
-            );
-            String newTitle = sc.nextLine();
-            if (!newTitle.trim().isEmpty()) {
-                target.title = newTitle.trim();
-            }
-
-            // Update description
-            System.out.print(
-                    "New Description (press Enter to keep current): "
-            );
-            String newDesc = sc.nextLine();
-            if (!newDesc.trim().isEmpty()) {
-                target.description = newDesc.trim();
-            }
-
-            // Update date (with validation)
-            while (true) {
-                System.out.print(
-                        "New Date (YYYY-MM-DD, press Enter to keep current: "
-                        + target.date + "): "
-                );
-                String dateInput = sc.nextLine().trim();
-
-                if (dateInput.isEmpty()) {
-                    break;
-                }
-
-                try {
-                    target.date = LocalDate.parse(dateInput);
-                    break;
-                } catch (DateTimeParseException e) {
-                    System.out.println("⚠ Invalid date format. Try again.");
-                }
-            }
-            // Update startDateTime
-            System.out.print(
-                    "New Start DateTime (YYYY-MM-DD HH:MM, press Enter to keep current: "
-                    + target.startDateTime + "): "
-            );
-            String newStart = sc.nextLine().trim();
-
-            if (!newStart.isEmpty()) {
-                target.startDateTime
-                        = LocalDateTime.parse(newStart.replace(" ", "T"));
-
-                // keep LocalDate in sync for recurrence logic
-                target.date = target.startDateTime.toLocalDate();
-            }
-
-            // Update endDateTime
-            System.out.print(
-                    "New End DateTime (YYYY-MM-DD HH:MM, press Enter to keep current: "
-                    + target.endDateTime + "): "
-            );
-            String newEnd = sc.nextLine().trim();
-
-            if (!newEnd.isEmpty()) {
-                target.endDateTime
-                        = LocalDateTime.parse(newEnd.replace(" ", "T"));
-            }
-
-            // Update recurrence if exists
-            if (recurrenceMap.containsKey(id)) {
-                System.out.print("Update recurrence? (y/n): ");
-                String choice = sc.nextLine();
-
-                if (choice.equalsIgnoreCase("y")) {
-                    System.out.print("New interval (e.g., 1d, 2w, 1m): ");
-                    String interval = sc.nextLine();
-
-                    System.out.println("End condition: 1. Count  2. Until Date");
-                    int type = sc.nextInt();
-                    sc.nextLine();
-
-                    int count = 0;
-                    LocalDate endDate = null;
-
-                    if (type == 1) {
-                        System.out.print("Repeat how many times: ");
-                        count = sc.nextInt();
-                        sc.nextLine();
-                    } else {
-                        System.out.print("Recur until (YYYY-MM-DD): ");
-                        endDate = LocalDate.parse(sc.nextLine());
-                    }
-
-                    recurrenceMap.put(id, new Recurrence(id, interval, count, endDate));
-                }
-            }
-
-            System.out.println("✅ Event updated successfully.");
-
-        } catch (InputMismatchException e) {
-            System.out.println("❌ Invalid ID. Please enter a number.");
-            sc.nextLine();
         }
+
+        if (target == null) {
+            System.out.println("❌ Event with ID " + id + " not found.");
+            return;
+        }
+
+        // --- Update Title ---
+        System.out.print("New Title (Enter to keep \"" + target.title + "\"): ");
+        String newTitle = sc.nextLine().trim();
+        if (!newTitle.isEmpty()) target.title = newTitle;
+
+        // --- Update Description ---
+        System.out.print("New Description (Enter to keep current): ");
+        String newDesc = sc.nextLine().trim();
+        if (!newDesc.isEmpty()) target.description = newDesc;
+
+        // --- Update Start Time ---
+        System.out.print("New Start (YYYY-MM-DD HH:MM, Enter to keep " + target.startDateTime + "): ");
+        String newStart = sc.nextLine().trim();
+        if (!newStart.isEmpty()) {
+            target.startDateTime = LocalDateTime.parse(newStart.replace(" ", "T"));
+            target.date = target.startDateTime.toLocalDate();
+        }
+
+        // --- Update End Time ---
+        System.out.print("New End (YYYY-MM-DD HH:MM, Enter to keep " + target.endDateTime + "): ");
+        String newEnd = sc.nextLine().trim();
+        if (!newEnd.isEmpty()) {
+            target.endDateTime = LocalDateTime.parse(newEnd.replace(" ", "T"));
+        }
+
+        // --- Update Recurrence ---
+        if (recurrenceMap.containsKey(id)) {
+            System.out.print("Update recurrence? (y/n): ");
+            if (sc.nextLine().equalsIgnoreCase("y")) {
+                System.out.print("New interval (1d/1w/1m): ");
+                String interval = sc.nextLine();
+                System.out.println("1. Times  2. Until Date");
+                int type = sc.nextInt();
+                sc.nextLine();
+
+                int count = 0;
+                String endDateStr = "0";
+
+                if (type == 1) {
+                    System.out.print("Times: ");
+                    count = sc.nextInt();
+                    sc.nextLine();
+                } else {
+                    System.out.print("Until (YYYY-MM-DD): ");
+                    endDateStr = sc.nextLine();
+                }
+                recurrenceMap.put(id, new Recurrence(id, interval, count, endDateStr));
+            }
+        }
+
+        // PERSIST CHANGES TO CSV
+        saveAllToCSV();
+        System.out.println("✅ Event updated successfully in memory and CSV.");
+
+    } catch (Exception e) {
+        System.out.println("❌ Error updating: " + e.getMessage());
+    }
+}
+
+static void saveAllToCSV() {
+    // Rewriting event.csv
+    try (PrintWriter pw = new PrintWriter(new FileOutputStream("event.csv"))) {
+        pw.println("eventId,title,description,startDateTime,endDateTime");
+        for (Event e : events) {
+            pw.println(escapeCSV(e.id) + "," + escapeCSV(e.title) + "," + escapeCSV(e.description) + ","
+                    + escapeCSV(e.startDateTime.toString()) + "," + escapeCSV(e.endDateTime.toString()));
+        }
+    } catch (IOException e) {
+        System.out.println("Error updating event.csv");
     }
 
+    // Rewriting recurrent.csv
+    try (PrintWriter pw = new PrintWriter(new FileOutputStream("recurrent.csv"))) {
+        pw.println("eventId,recurrentInterval,recurrentTimes,recurrentEndDate");
+        for (Recurrence r : recurrenceMap.values()) {
+            pw.println(escapeCSV(r.eventId) + "," + escapeCSV(r.recurrentInterval) + ","
+                    + escapeCSV(r.recurrentTimes) + "," + escapeCSV(r.recurrentEndDate));
+        }
+    } catch (IOException e) {
+        System.out.println("Error updating recurrent.csv");
+    }
+}
+
+static String escapeCSV(Object value) {
+    String str = value.toString();
+    if (str.contains(",") || str.contains("\"") || str.contains("\n")) {
+        return "\"" + str.replace("\"", "\"\"") + "\"";
+    }
+    return str;
+}
     static void deleteEvent() {
         System.out.print("Enter Event ID to delete: ");
         int id = sc.nextInt();
@@ -663,4 +647,3 @@ public class CalendarApp_Draft {
         }
     }
 }
->>>>>>> 65884e0ecbaa6e54b57d35f91b3f7fd1cbd2730c
