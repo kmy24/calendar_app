@@ -161,7 +161,7 @@ public class CalendarApp_Draft {
         if (!file.exists()) return;
 
         try (Scanner fs = new Scanner(file)) {
-            if (fs.hasNextLine()) fs.nextLine(); // Skip header
+            if (fs.hasNextLine()) fs.nextLine(); 
             while (fs.hasNextLine()) {
                 String line = fs.nextLine();
                 if(line.trim().isEmpty()) continue;
