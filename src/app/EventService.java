@@ -9,7 +9,7 @@ import java.io.*;
 
 
 public class EventService {
-    private List<Event> events = new ArrayList<>();
+    private static List<Event> events = new ArrayList<>();
     private Map<Integer, Recurrence> recurrenceMap = new HashMap<>();
     private int idCounter = 1;
     private Scanner sc = new Scanner(System.in);
@@ -351,9 +351,41 @@ public class EventService {
     // === View Events ===
     public void viewEvents() {
         System.out.println("1. Weekly View  2. Monthly View");
-        int choice = sc.nextInt(); sc.nextLine();
-        if (choice == 1) viewWeek(); else viewMonth();
+        try {
+            int choice = sc.nextInt();
+            sc.nextLine();
+
+            switch (choice) {
+                case 1 -> viewAllEvents();
+                case 2 -> viewWeek();
+                case 3 -> viewMonth();
+                default -> System.out.println("Invalid choice.");
+            }
+        } catch (InputMismatchException e) {
+            System.out.println("Invalid input.");
+            sc.nextLine();
+      }
     }
+    
+    static void viewAllEvents() {
+    if (events.isEmpty()) {
+        System.out.println("No events found.");
+        return;
+    }
+
+    // Sort events by start date & time
+    events.sort(Comparator.comparing(e -> e.startDateTime));
+
+    System.out.println("\n--- All Events ---");
+    for (Event e : events) {
+        System.out.println(
+            "ID: " + e.id +
+            " | " + e.title +
+            " | " + e.startDateTime +
+            " - " + e.endDateTime.toLocalTime()
+        );
+    }
+}
 
     private void viewWeek() {
         System.out.print("Start date (YYYY-MM-DD): ");
