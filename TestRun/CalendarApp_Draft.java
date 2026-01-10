@@ -80,7 +80,7 @@ public class CalendarApp_Draft {
         while (true) {
             System.out.println("\n=== CALENDAR APP ===");
             System.out.println("1. Create Event");
-            System.out.println("2. View Events (Week/Month)");
+            System.out.println("2. View Events (All/Week/Month)");
             System.out.println("3. Update Event");
             System.out.println("4. Delete Event");
             System.out.println("5. Search Menu");
