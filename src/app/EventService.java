@@ -389,19 +389,33 @@ public class EventService {
 
     private void viewWeek() {
         System.out.print("Start date (YYYY-MM-DD): ");
-        LocalDate start = LocalDate.parse(sc.nextLine());
-        LocalDate weekStart = start.with(java.time.DayOfWeek.SUNDAY);
+        try {
+            LocalDate start = LocalDate.parse(sc.nextLine());
 
-        System.out.println("\n--- Week of " + weekStart + " ---");
-        for (int i = 0; i < 7; i++) {
-            LocalDate day = weekStart.plusDays(i);
-            List<String> titles = getEventTitlesForDate(day);
-            System.out.print(day + " (" + day.getDayOfWeek().toString().substring(0, 3) + "): ");
-            if (titles.isEmpty()) {
-                System.out.println("-");
-            } else {
-                System.out.println(String.join(", ", titles));
+            // FIX: Calculate the Sunday at the START of the week
+            // (The old code jumped to the END of the week)
+            LocalDate weekStart = start.minusDays(start.getDayOfWeek().getValue() % 7);
+
+            System.out.println("\n--- Week of " + weekStart + " ---");
+            for (int i = 0; i < 7; i++) {
+                LocalDate day = weekStart.plusDays(i);
+                
+                // Get formatted strings (Time + Title)
+                List<String> eventsOnDay = getEventTitlesForDate(day); 
+
+                System.out.println(day + " (" + day.getDayOfWeek().toString().substring(0, 3) + "): ");
+                
+                if (eventsOnDay.isEmpty()) {
+                    System.out.println("    -");
+                } else {
+                    // Print each event on a new line for clarity
+                    for (String eventStr : eventsOnDay) {
+                        System.out.println("    " + eventStr);
+                    }
+                }
             }
+        } catch (Exception e) {
+            System.out.println("Invalid date input.");
         }
     }
 
@@ -495,20 +509,31 @@ public class EventService {
     }
     // === Helper for recurrence ===
     private List<String> getEventTitlesForDate(LocalDate targetDate) {
-        List<String> titles = new ArrayList<>();
+        List<String> result = new ArrayList<>();
+        
         for (Event e : events) {
             boolean isMatch = false;
+            
+            // 1. Check if it is the specific date (Normal event OR Start of recurring)
             if (e.date.equals(targetDate)) {
                 isMatch = true;
-            } else if (recurrenceMap.containsKey(e.id)) {
+            } 
+            // 2. Check if it is a recurring instance
+            else if (recurrenceMap.containsKey(e.id)) {
                 Recurrence r = recurrenceMap.get(e.id);
+                // Only check recurrence if we are strictly AFTER the start date
                 if (targetDate.isAfter(e.date)) {
-                    isMatch = checkRecurrence(e.date, targetDate, r);
+                     isMatch = checkRecurrence(e.date, targetDate, r);
                 }
             }
-            if (isMatch) titles.add(e.title);
+
+            if (isMatch) {
+                // FORMAT: [17:40] Title
+                String formatted = String.format("[%s] %s", e.startDateTime.toLocalTime(), e.title);
+                result.add(formatted);
+            }
         }
-        return titles; 
+        return result;
     }
     
     
@@ -519,11 +544,16 @@ public class EventService {
         int value = Integer.parseInt(interval.substring(0, interval.length() - 1));
         // Parse the unit (e.g., "w")
         String unit = interval.substring(interval.length() - 1);
-        
-        // 1. Basic Check: Current date must be AFTER start date
-        if (!current.isAfter(start)) return false;
 
-        // 2. Check End Date (if set)
+        long diff = switch (unit) {
+            case "d" -> ChronoUnit.DAYS.between(start, current);
+            case "w" -> ChronoUnit.WEEKS.between(start, current);
+            case "m" -> ChronoUnit.MONTHS.between(start, current);
+            default -> 0;
+        };
+
+        if (diff <= 0 || diff % value != 0) return false;
+        if (r.recurrentTimes > 0 && diff / value > r.recurrentTimes) return false;
         if (!r.recurrentEndDate.equals("0")) {
             LocalDate endDate = LocalDate.parse(r.recurrentEndDate);
             if (current.isAfter(endDate)) return false;
