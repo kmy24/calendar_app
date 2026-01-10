@@ -454,13 +454,43 @@ public class CalendarApp_Draft {
 
     // --- VIEW LOGIC ---
     static void viewEvents() {
-        System.out.println("1. Weekly View  2. Monthly View");
+        System.out.println("1. View All Events  2. Weekly View  3. Monthly View");
+        
+        try {
         int choice = sc.nextInt();
         sc.nextLine();
 
-        if (choice == 1) viewWeek();
-        else viewMonth();
+        switch (choice) {
+            case 1 -> viewAllEvents();
+            case 2 -> viewWeek();
+            case 3 -> viewMonth();
+            default -> System.out.println("Invalid choice.");
+        }
+    } catch (InputMismatchException e) {
+        System.out.println("Invalid input.");
+        sc.nextLine();
     }
+    }
+    
+    static void viewAllEvents() {
+    if (events.isEmpty()) {
+        System.out.println("No events found.");
+        return;
+    }
+
+    // Sort events by start date & time
+    events.sort(Comparator.comparing(e -> e.startDateTime));
+
+    System.out.println("\n--- All Events ---");
+    for (Event e : events) {
+        System.out.println(
+            "ID: " + e.id +
+            " | " + e.title +
+            " | " + e.startDateTime +
+            " - " + e.endDateTime.toLocalTime()
+        );
+    }
+}
 
     static void viewWeek() {
         System.out.print("Start date (YYYY-MM-DD): ");
