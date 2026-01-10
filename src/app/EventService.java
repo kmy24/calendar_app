@@ -350,7 +350,7 @@ public class EventService {
 
     // === View Events ===
     public void viewEvents() {
-        System.out.println("1. Weekly View  2. Monthly View");
+        System.out.println("1. View All Events  2. Weekly View  3. Monthly View");
         try {
             int choice = sc.nextInt();
             sc.nextLine();
@@ -515,22 +515,54 @@ public class EventService {
 
     private boolean checkRecurrence(LocalDate start, LocalDate current, Recurrence r) {
         String interval = r.recurrentInterval;
+        // Parse the number (e.g., "2" from "2w")
         int value = Integer.parseInt(interval.substring(0, interval.length() - 1));
+        // Parse the unit (e.g., "w")
         String unit = interval.substring(interval.length() - 1);
+        
+        // 1. Basic Check: Current date must be AFTER start date
+        if (!current.isAfter(start)) return false;
 
-        long diff = switch (unit) {
-            case "d" -> ChronoUnit.DAYS.between(start, current);
-            case "w" -> ChronoUnit.WEEKS.between(start, current);
-            case "m" -> ChronoUnit.MONTHS.between(start, current);
-            default -> 0;
-        };
-
-        if (diff <= 0 || diff % value != 0) return false;
-        if (r.recurrentTimes > 0 && diff / value > r.recurrentTimes) return false;
+        // 2. Check End Date (if set)
         if (!r.recurrentEndDate.equals("0")) {
             LocalDate endDate = LocalDate.parse(r.recurrentEndDate);
             if (current.isAfter(endDate)) return false;
         }
+
+        // 3. precise Interval Logic
+        long occurrencesPassed = 0;
+
+        switch (unit) {
+            case "d" -> {
+                long days = ChronoUnit.DAYS.between(start, current);
+                if (days % value != 0) return false;
+                occurrencesPassed = days / value;
+            }
+            case "w" -> {
+                long days = ChronoUnit.DAYS.between(start, current);
+                // MUST be a multiple of 7 days to land on the same day of the week
+                if (days % 7 != 0) return false; 
+                
+                long weeks = days / 7;
+                if (weeks % value != 0) return false;
+                occurrencesPassed = weeks / value;
+            }
+            case "m" -> {
+                // MUST match the exact day of the month (e.g., the 10th)
+                if (current.getDayOfMonth() != start.getDayOfMonth()) return false;
+
+                long months = ChronoUnit.MONTHS.between(start, current);
+                if (months % value != 0) return false;
+                occurrencesPassed = months / value;
+            }
+            default -> { return false; }
+        }
+
+        // 4. Check "Times" Limit (if set)
+        if (r.recurrentTimes > 0 && occurrencesPassed > r.recurrentTimes) {
+            return false;
+        }
+
         return true;
     }
 

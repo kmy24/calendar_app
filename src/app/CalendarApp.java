@@ -11,7 +11,7 @@ public class CalendarApp {
         while (true) {
             System.out.println("\n=== CALENDAR APP ===");
             System.out.println("1. Create Event");
-            System.out.println("2. View Events (Weekly/Monthly)");
+            System.out.println("2. View Events (All/Weekly/Monthly)");
             System.out.println("3. Update Event");
             System.out.println("4. Delete Event");
             System.out.println("5. Search Menu (ID/Title/Date)");
