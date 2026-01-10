@@ -315,9 +315,16 @@ public class EventService {
         if (choice == 1) {
             System.out.print("Enter Priority (High/Medium/Low): ");
             String p = sc.nextLine();
+            System.out.println("\n--- Results for Priority: " + p.toUpperCase() + " ---");
+
             for (Event e : events) {
                 if (e.priority.equalsIgnoreCase(p)) {
-                    System.out.println(e.title + " at " + e.location);
+                    // Main line: Date, Time, Title, Location
+                    System.out.printf("[%s] %s @ %s | %s (Loc: %s)\n", 
+                        e.priority.toUpperCase(), e.date, e.startDateTime.toLocalTime(), e.title, e.location);
+                    // Sub-line: Description
+                    System.out.println("     └─ Desc: " + e.description);
+                    System.out.println("--------------------------------------------------");
                 }
             }
         } else if (choice == 2) {
@@ -326,10 +333,16 @@ public class EventService {
             System.out.print("End Date (YYYY-MM-DD): ");
             LocalDate end = LocalDate.parse(sc.nextLine());
 
+            System.out.println("\n--- Events from " + start + " to " + end + " ---");
+            events.sort(Comparator.comparing(e -> e.startDateTime));
+
             for (Event e : events) {
-                // Check if event date is between start and end
+                // check if start is after the end
                 if (!e.date.isBefore(start) && !e.date.isAfter(end)) {
-                    System.out.println(e.date + ": " + e.title);
+                    System.out.printf("%s @ %s | %s (Loc: %s)\n", 
+                        e.date, e.startDateTime.toLocalTime(), e.title, e.location);
+                    System.out.println("     └─ Desc: " + e.description);
+                    System.out.println("--------------------------------------------------");
                 }
             }
         }
