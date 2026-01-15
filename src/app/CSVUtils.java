@@ -58,7 +58,5 @@ public class CSVUtils {
     } catch (IOException e) {
         System.out.println("Error saving additional info.");
     }
-}
-    
-    
+    }   
 }

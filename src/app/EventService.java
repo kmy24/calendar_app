@@ -11,7 +11,7 @@ import java.io.*;
 public class EventService {
     private static List<Event> events = new ArrayList<>();
     private Map<Integer, Recurrence> recurrenceMap = new HashMap<>();
-    private Map<Integer, AdditionalInfo> additionalMap = new HashMap<>();
+    static private Map<Integer, AdditionalInfo> additionalMap = new HashMap<>();
     private int idCounter = 1;
     private Scanner sc = new Scanner(System.in);
     
@@ -154,7 +154,8 @@ public class EventService {
         System.out.println("\n--- Update Event ---");
         System.out.print("Enter Event ID to update: ");
         try {
-            int id = sc.nextInt(); sc.nextLine();
+            int id = sc.nextInt();
+            sc.nextLine();
             Event target = null;
             for (Event e : events) {
                 if (e.id == id) { target = e; break; }
@@ -164,6 +165,7 @@ public class EventService {
                 return;
             }
 
+            // --- Standard Field Updates ---
             System.out.print("New Title (Enter to keep \"" + target.title + "\"): ");
             String newTitle = sc.nextLine();
             if (!newTitle.trim().isEmpty()) target.title = newTitle;
@@ -192,10 +194,14 @@ public class EventService {
             if (!newEnd.isEmpty()) {
                 target.endDateTime = LocalDateTime.parse(newEnd.replace(" ", "T"));
             }
+            
+            // Conflict Check
             if (isConflicting(target.startDateTime, target.endDateTime, target.id)) {
                 System.out.print("This update conflicts with another event. Proceed anyway? (y/n): ");
                 if (!sc.nextLine().equalsIgnoreCase("y")) return; 
             }
+
+            // Recurrence Update
             if (recurrenceMap.containsKey(id)) {
                 System.out.print("Update recurrence? (y/n): ");
                 if (sc.nextLine().equalsIgnoreCase("y")) {
@@ -215,11 +221,37 @@ public class EventService {
                 }
             }
 
+            // --- NEW: Additional Info Update ---
+            System.out.print("Update Category/Attendees? (y/n): ");
+            if (sc.nextLine().equalsIgnoreCase("y")) {
+                // Get current values if they exist
+                String currentCat = "Work"; // default
+                String currentAtt = "";
+                if (additionalMap.containsKey(id)) {
+                    currentCat = additionalMap.get(id).category;
+                    currentAtt = additionalMap.get(id).attendees;
+                }
+
+                System.out.print("New Category (Current: " + currentCat + "): ");
+                String inputCat = sc.nextLine();
+                if (inputCat.isEmpty()) inputCat = currentCat;
+
+                System.out.print("New Attendees (Current: " + currentAtt + "): ");
+                String inputAtt = sc.nextLine();
+                if (inputAtt.isEmpty()) inputAtt = currentAtt;
+
+                AdditionalInfo newInfo = new AdditionalInfo(id, inputCat, inputAtt);
+                additionalMap.put(id, newInfo);
+            }
+
+            // Save all changes
             CSVUtils.rewriteEventCSV(events);
             CSVUtils.rewriteRecurrenceCSV(recurrenceMap);
+            CSVUtils.rewriteAdditionalCSV(additionalMap); // Don't forget this!
+            
             System.out.println("✅ Event updated.");
         } catch (Exception e) {
-            System.out.println("❌ Invalid input.");
+            System.out.println("❌ Invalid input: " + e.getMessage());
             sc.nextLine();
         }
     }
@@ -414,39 +446,47 @@ public class EventService {
     }
     
     static void viewAllEvents() {
-    if (events.isEmpty()) {
-        System.out.println("No events found.");
-        return;
-    }
+        if (events.isEmpty()) {
+            System.out.println("No events found.");
+            return;
+        }
 
-    // Sort events by start date & time
-    events.sort(Comparator.comparing(e -> e.startDateTime));
+        // Sort events by start date & time
+        events.sort(Comparator.comparing(e -> e.startDateTime));
+        System.out.println("\n--- All Events ---");
+        for (Event e : events) {
+            // Fetch additional info safely
+            String category = "No Category";
+            String attendees = "None";
+            
+            if (additionalMap.containsKey(e.id)) {
+                AdditionalInfo info = additionalMap.get(e.id);
+                category = info.category;
+                attendees = info.attendees;
+            }
 
-    System.out.println("\n--- All Events ---");
-    for (Event e : events) {
-        System.out.println(
-            "ID: " + e.id +
-            " | " + e.title +
-            " | " + e.startDateTime +
-            " - " + e.endDateTime.toLocalTime()
-        );
+            System.out.println(
+                "ID: " + e.id +
+                " | " + e.title +
+                " | " + e.startDateTime +
+                " | Cat: " + category + 
+                " | Att: " + attendees
+            );
+        }
     }
-}
 
     private void viewWeek() {
         System.out.print("Start date (YYYY-MM-DD): ");
         try {
             LocalDate start = LocalDate.parse(sc.nextLine());
-
-            // FIX: Calculate the Sunday at the START of the week
-            // (The old code jumped to the END of the week)
+            // Calculate previous Sunday
             LocalDate weekStart = start.minusDays(start.getDayOfWeek().getValue() % 7);
 
             System.out.println("\n--- Week of " + weekStart + " ---");
             for (int i = 0; i < 7; i++) {
                 LocalDate day = weekStart.plusDays(i);
                 
-                // Get formatted strings (Time + Title)
+                // This helper fetches the formatted string with Category included
                 List<String> eventsOnDay = getEventTitlesForDate(day); 
 
                 System.out.println(day + " (" + day.getDayOfWeek().toString().substring(0, 3) + "): ");
@@ -454,8 +494,8 @@ public class EventService {
                 if (eventsOnDay.isEmpty()) {
                     System.out.println("    -");
                 } else {
-                    // Print each event on a new line for clarity
                     for (String eventStr : eventsOnDay) {
+                        // eventStr already contains the Category from the helper method
                         System.out.println("    " + eventStr);
                     }
                 }
@@ -481,85 +521,74 @@ public class EventService {
 
         LocalDate firstDay = LocalDate.of(year, month, 1);
         int daysInMonth = firstDay.lengthOfMonth();
-        // Adjust start day: 0 = Sunday, 1 = Monday, etc.
-        int startDayOffset = firstDay.getDayOfWeek().getValue() % 7; 
+        int startDayOffset = firstDay.getDayOfWeek().getValue() % 7;
 
         System.out.println("\n====================================");
         System.out.println("       " + firstDay.getMonth() + " " + year);
         System.out.println("====================================");
         System.out.println(" SUN  MON  TUE  WED  THU  FRI  SAT");
 
-        // 1. Print leading spaces for the first week
-        for (int i = 0; i < startDayOffset; i++) {
-            System.out.print("     ");
-        }
+        // 1. Print leading spaces
+        for (int i = 0; i < startDayOffset; i++) System.out.print("     ");
 
-        // 2. Print the days of the month
+        // 2. Print the days grid
         for (int day = 1; day <= daysInMonth; day++) {
             LocalDate current = LocalDate.of(year, month, day);
+            // This helper handles the grid markers [ 5] vs  5
+            List<String> titles = getEventTitlesForDate(current); 
+            
+            if (!titles.isEmpty()) System.out.printf("[%2d] ", day);
+            else System.out.printf(" %2d  ", day);
 
-            // Use your helper to check for ANY events (normal or recurring)
-            List<String> titles = getEventTitlesForDate(current);
-
-            if (!titles.isEmpty()) {
-                // Day has events: Wrap in brackets like [ 5]
-                System.out.printf("[%2d] ", day);
-            } else {
-                // Day is empty: Regular spacing
-                System.out.printf(" %2d  ", day);
-            }
-
-            // Wrap to next line every Saturday
-            if ((day + startDayOffset) % 7 == 0) {
-                System.out.println();
-            }
+            if ((day + startDayOffset) % 7 == 0) System.out.println();
         }
-
-        // Ensure we move to a new line after the grid
         System.out.println("\n====================================");
         System.out.println("           MONTHLY AGENDA");
         System.out.println("====================================");
 
-        // 3. Detailed Summary including Recurrences
+        // 3. Detailed Summary (UPDATED for Category)
         boolean anyEvents = false;
         for (int day = 1; day <= daysInMonth; day++) {
             LocalDate current = LocalDate.of(year, month, day);
-
-            // Loop through all events to see which ones land on this specific 'current' day
+            
             for (Event e : events) {
                 boolean isMatch = false;
-
                 if (e.date.equals(current)) {
                     isMatch = true;
                 } else if (recurrenceMap.containsKey(e.id)) {
-                    // This checks your recurrence logic (1w, 1m, etc.)
-                    isMatch = checkRecurrence(e.date, current, recurrenceMap.get(e.id));
+                    if (current.isAfter(e.date)) {
+                        isMatch = checkRecurrence(e.date, current, recurrenceMap.get(e.id));
+                    }
                 }
 
                 if (isMatch) {
-                    System.out.printf("%02d %s: %s (%s - %s)\n", 
+                    // --- NEW: Fetch Category ---
+                    String category = "No Category";
+                    if (additionalMap.containsKey(e.id)) {
+                        category = additionalMap.get(e.id).category;
+                    }
+
+                    // Display: Date Day: Title (Time) - [Category]
+                    System.out.printf("%02d %s: %s (%s - %s) - [%s]\n", 
                         day, 
                         current.getDayOfWeek().toString().substring(0,3), 
                         e.title, 
                         e.startDateTime.toLocalTime(), 
-                        e.endDateTime.toLocalTime());
+                        e.endDateTime.toLocalTime(),
+                        category); // <--- Added this
                     anyEvents = true;
                 }
             }
         }
 
-        if (!anyEvents) {
-            System.out.println("No events scheduled for this month.");
-        }
+        if (!anyEvents) System.out.println("No events scheduled for this month.");
         System.out.println("====================================");
     }
     // === Helper for recurrence ===
     private List<String> getEventTitlesForDate(LocalDate targetDate) {
         List<String> result = new ArrayList<>();
-        
         for (Event e : events) {
             boolean isMatch = false;
-            
             // 1. Check if it is the specific date (Normal event OR Start of recurring)
             if (e.date.equals(targetDate)) {
                 isMatch = true;
@@ -574,8 +603,15 @@ public class EventService {
             }
 
             if (isMatch) {
-                // FORMAT: [17:40] Title
-                String formatted = String.format("[%s] %s", e.startDateTime.toLocalTime(), e.title);
+                // Fetch Category for display
+                String category = "No Category";
+                if (additionalMap.containsKey(e.id)) {
+                    category = additionalMap.get(e.id).category;
+                }
+
+                // FORMAT: [17:40] Title (Category)
+                String formatted = String.format("[%s] %s (%s)", 
+                    e.startDateTime.toLocalTime(), e.title, category);
                 result.add(formatted);
             }
         }
