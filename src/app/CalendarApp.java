@@ -15,7 +15,7 @@ public class CalendarApp {
             System.out.println("3. Update Event");
             System.out.println("4. Delete Event");
             System.out.println("5. Search Menu (ID/Title/Date)");
-            System.out.println("6. Advanced Search (Priority/Range/Category)"); // Added this
+            System.out.println("6. Advanced Search (Priority/Range/Additional Field)"); // Added this
             System.out.println("7. Show Statistics");                // Added this
             System.out.println("8. Backup Events");
             System.out.println("9. Restore Events");

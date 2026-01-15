@@ -113,10 +113,13 @@ public class EventService {
             events.add(e);
             CSVUtils.rewriteEventCSV(events);
             
-            System.out.print("Category (e.g., Work/Personal): ");
+            System.out.print("Additional Field (e.g., Work/Personal): ");
             String cat = sc.nextLine();
-            System.out.print("Attendees (comma separated): ");
+            System.out.print("Field's Description: ");
             String att = sc.nextLine();
+            
+            if(cat.equals("")) cat = "No Field";
+            if(att.equals("")) att = "None";
     
             // Save to Map and CSV
             AdditionalInfo info = new AdditionalInfo(id, cat, att);
@@ -222,21 +225,21 @@ public class EventService {
             }
 
             // --- NEW: Additional Info Update ---
-            System.out.print("Update Category/Attendees? (y/n): ");
+            System.out.print("Update Field? (y/n): ");
             if (sc.nextLine().equalsIgnoreCase("y")) {
                 // Get current values if they exist
-                String currentCat = "Work"; // default
-                String currentAtt = "";
+                String currentCat = "No Field"; // default
+                String currentAtt = "None";
                 if (additionalMap.containsKey(id)) {
                     currentCat = additionalMap.get(id).category;
                     currentAtt = additionalMap.get(id).attendees;
                 }
 
-                System.out.print("New Category (Current: " + currentCat + "): ");
+                System.out.print("New Field (Current: " + currentCat + "): ");
                 String inputCat = sc.nextLine();
                 if (inputCat.isEmpty()) inputCat = currentCat;
 
-                System.out.print("New Attendees (Current: " + currentAtt + "): ");
+                System.out.print("New Description (Current: " + currentAtt + "): ");
                 String inputAtt = sc.nextLine();
                 if (inputAtt.isEmpty()) inputAtt = currentAtt;
 
@@ -456,7 +459,7 @@ public class EventService {
         System.out.println("\n--- All Events ---");
         for (Event e : events) {
             // Fetch additional info safely
-            String category = "No Category";
+            String category = "No Field";
             String attendees = "None";
             
             if (additionalMap.containsKey(e.id)) {
@@ -563,7 +566,7 @@ public class EventService {
 
                 if (isMatch) {
                     // --- NEW: Fetch Category ---
-                    String category = "No Category";
+                    String category = "No Field";
                     if (additionalMap.containsKey(e.id)) {
                         category = additionalMap.get(e.id).category;
                     }
@@ -604,7 +607,7 @@ public class EventService {
 
             if (isMatch) {
                 // Fetch Category for display
-                String category = "No Category";
+                String category = "No Field";
                 if (additionalMap.containsKey(e.id)) {
                     category = additionalMap.get(e.id).category;
                 }
