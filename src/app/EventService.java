@@ -11,6 +11,7 @@ import java.io.*;
 public class EventService {
     private static List<Event> events = new ArrayList<>();
     private Map<Integer, Recurrence> recurrenceMap = new HashMap<>();
+    private Map<Integer, AdditionalInfo> additionalMap = new HashMap<>();
     private int idCounter = 1;
     private Scanner sc = new Scanner(System.in);
     
@@ -64,6 +65,21 @@ public class EventService {
                 }
             } catch (Exception e) { System.out.println("Error loading recurrent.csv"); }
         }
+        
+        File addFile = new File("additional.csv");
+        if (addFile.exists()) {
+            try (Scanner reader = new Scanner(addFile)) {
+                if (reader.hasNextLine()) reader.nextLine(); // Skip header
+                while (reader.hasNextLine()) {
+                    String[] p = reader.nextLine().split(",");
+                    if (p.length == 3) {
+                        int id = Integer.parseInt(p[0]);
+                        AdditionalInfo info = new AdditionalInfo(id, p[1], p[2]);
+                        additionalMap.put(id, info);
+            }
+        }
+    } catch (Exception e) { System.out.println("Error loading additional.csv"); }
+}
     }
     
     // === Create Event ===
@@ -96,6 +112,16 @@ public class EventService {
             Event e = new Event(id, title, desc, start, end, loc, prio);
             events.add(e);
             CSVUtils.rewriteEventCSV(events);
+            
+            System.out.print("Category (e.g., Work/Personal): ");
+            String cat = sc.nextLine();
+            System.out.print("Attendees (comma separated): ");
+            String att = sc.nextLine();
+    
+            // Save to Map and CSV
+            AdditionalInfo info = new AdditionalInfo(id, cat, att);
+            additionalMap.put(id, info);
+            CSVUtils.rewriteAdditionalCSV(additionalMap);
 
             System.out.print("Recurring? (y/n): ");
             if (sc.nextLine().equalsIgnoreCase("y")) {
@@ -216,10 +242,12 @@ public class EventService {
         }
         boolean removed = events.removeIf(e -> e.id == id);
         recurrenceMap.remove(id);
+        additionalMap.remove(id);
         if (removed) {
             System.out.println("Event deleted.");
             CSVUtils.rewriteEventCSV(events);
             CSVUtils.rewriteRecurrenceCSV(recurrenceMap);
+            CSVUtils.rewriteAdditionalCSV(additionalMap);
         } else {
             System.out.println("ID not found.");
         }
@@ -310,6 +338,7 @@ public class EventService {
     public void advancedSearch() {
         System.out.println("1. Search by Priority");
         System.out.println("2. Search by Date Range");
+        System.out.println("3. Search by Category");
         int choice = sc.nextInt(); sc.nextLine();
 
         if (choice == 1) {
@@ -345,6 +374,23 @@ public class EventService {
                     System.out.println("--------------------------------------------------");
                 }
             }
+        } else if (choice == 3) {
+        System.out.print("Enter Category: ");
+        String targetCat = sc.nextLine().toLowerCase();
+        System.out.println("\n--- Events in Category: " + targetCat + " ---");
+        
+        for (AdditionalInfo info : additionalMap.values()) {
+            if (info.category.toLowerCase().contains(targetCat)) {
+                // We have the ID, now find the matching Event object to display details
+                for (Event e : events) {
+                    if (e.id == info.eventId) {
+                        System.out.printf("[%s] %s | %s\n", 
+                            info.category, e.title, e.date);
+                         System.out.println("     - Attendees: " + info.attendees);
+                    }
+                }
+            }
+        }
         }
     }
 
@@ -612,6 +658,11 @@ public class EventService {
             for (Recurrence r : recurrenceMap.values()) {
                 pw.println(r.eventId + "|" + r.recurrentInterval + "|" + r.recurrentTimes + "|" + r.recurrentEndDate);
             }
+            
+            pw.println("===ADDITIONAL===");
+            for (AdditionalInfo info : additionalMap.values()) {
+                pw.println(info.eventId + "|" + info.category + "|" + info.attendees);
+            }
             System.out.println("Backup completed to calendar_backup.txt"); // Required output format 
         } catch (IOException e) {
             System.out.println("Backup failed: " + e.getMessage());
@@ -628,6 +679,7 @@ public class EventService {
         try (Scanner reader = new Scanner(backupFile)) {
             events.clear();
             recurrenceMap.clear();
+            additionalMap.clear();
             String currentSection = "";
             int maxId = 0;
 
@@ -638,6 +690,9 @@ public class EventService {
                     continue;
                 } else if (line.equals("===RECURRENCE===")) {
                     currentSection = "RECURRENCE";
+                    continue;
+                } else if (line.equals("===ADDITIONAL===")) {
+                    currentSection = "ADDITIONAL";
                     continue;
                 }
 
@@ -652,6 +707,10 @@ public class EventService {
                     int id = Integer.parseInt(parts[0]);
                     Recurrence r = new Recurrence(id, parts[1], Integer.parseInt(parts[2]), parts[3]);
                     recurrenceMap.put(id, r);
+                } else if (currentSection.equals("ADDITIONAL") && parts.length == 3) {
+                    int id = Integer.parseInt(parts[0]);
+                    AdditionalInfo info = new AdditionalInfo(id, parts[1], parts[2]);
+                    additionalMap.put(id, info);
                 }
             }
 
@@ -660,6 +719,7 @@ public class EventService {
             // Persist to local CSV files immediately 
             CSVUtils.rewriteEventCSV(events);
             CSVUtils.rewriteRecurrenceCSV(recurrenceMap);
+            CSVUtils.rewriteAdditionalCSV(additionalMap);
 
             System.out.println("Restore successful! Loaded " + events.size() + " events.");
         } catch (Exception e) {

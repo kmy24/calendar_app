@@ -42,5 +42,23 @@ public class CSVUtils {
         return (s == null) ? "" : s.replace(",", ";");
     }
     
+    public static void rewriteAdditionalCSV(Map<Integer, AdditionalInfo> map) {
+    File finalFile = new File("additional.csv");
+    File tempFile = new File("additional_temp.csv");
+
+    try (PrintWriter pw = new PrintWriter(new FileWriter(tempFile))) {
+        pw.println("id,category,attendees");
+        for (AdditionalInfo info : map.values()) {
+            pw.println(info.eventId + "," + sanitize(info.category) + "," + sanitize(info.attendees));
+        }
+        pw.flush();
+        pw.close();
+        if (finalFile.exists()) finalFile.delete();
+        tempFile.renameTo(finalFile);
+    } catch (IOException e) {
+        System.out.println("Error saving additional info.");
+    }
+}
+    
     
 }
