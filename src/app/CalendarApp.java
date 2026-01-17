@@ -1,5 +1,5 @@
 package app;
-//
+
 import java.util.Scanner;
 import java.util.InputMismatchException;
 
@@ -15,8 +15,8 @@ public class CalendarApp {
             System.out.println("3. Update Event");
             System.out.println("4. Delete Event");
             System.out.println("5. Search Menu (ID/Title/Date)");
-            System.out.println("6. Advanced Search (Priority/Range/Additional Field)"); // Added this
-            System.out.println("7. Show Statistics");                // Added this
+            System.out.println("6. Advanced Search (Priority/Range/Additional Field)"); 
+            System.out.println("7. Show Statistics");                
             System.out.println("8. Backup Events");
             System.out.println("9. Restore Events");
             System.out.println("10. Exit");
@@ -41,7 +41,7 @@ public class CalendarApp {
                 }
             } catch (InputMismatchException e) {
                 System.out.println("❌ Error: Please enter a valid number.");
-                sc.nextLine(); // Important: Clear the invalid input from the scanner
+                sc.nextLine(); 
             }
         }
     }

@@ -39,7 +39,7 @@ public class Event {
 
     @Override
     public String toString() {
-        // Updated this so you can actually see the Location and Priority in the list!
+        
         return String.format("ID: %d | [%s] %s | Date: %s | Loc: %s | Desc: %s", 
                               id, priority.toUpperCase(), title, date, location, description);
     }

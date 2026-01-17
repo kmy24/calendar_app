@@ -250,7 +250,7 @@ public class EventService {
             // Save all changes
             CSVUtils.rewriteEventCSV(events);
             CSVUtils.rewriteRecurrenceCSV(recurrenceMap);
-            CSVUtils.rewriteAdditionalCSV(additionalMap); // Don't forget this!
+            CSVUtils.rewriteAdditionalCSV(additionalMap); 
             
             System.out.println("✅ Event updated.");
         } catch (Exception e) {
@@ -416,7 +416,7 @@ public class EventService {
         
         for (AdditionalInfo info : additionalMap.values()) {
             if (info.category.toLowerCase().contains(targetCat)) {
-                // We have the ID, now find the matching Event object to display details
+               
                 for (Event e : events) {
                     if (e.id == info.eventId) {
                         System.out.printf("[%s] %s | %s\n", 
@@ -498,7 +498,7 @@ public class EventService {
                     System.out.println("    -");
                 } else {
                     for (String eventStr : eventsOnDay) {
-                        // eventStr already contains the Category from the helper method
+                       
                         System.out.println("    " + eventStr);
                     }
                 }
