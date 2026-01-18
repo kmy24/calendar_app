@@ -47,7 +47,7 @@ public class CSVUtils {
     File tempFile = new File("additional_temp.csv");
 
     try (PrintWriter pw = new PrintWriter(new FileWriter(tempFile))) {
-        pw.println("id,Additional Field,Field's Description");
+        pw.println("id,Category,attendees");
         for (AdditionalInfo info : map.values()) {
             pw.println(info.eventId + "," + sanitize(info.category) + "," + sanitize(info.attendees));
         }
