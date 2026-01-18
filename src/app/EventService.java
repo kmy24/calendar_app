@@ -325,35 +325,50 @@ public class EventService {
     }
 
     // === Delete Event ===
-    public void deleteEvent() {
-        System.out.print("Enter Event ID to delete: ");
-        int id = sc.nextInt();
-        sc.nextLine();
-        Event deletedEvent = null;
-        for (Event e : events) {
-            if (e.id == id) {
-                deletedEvent = e;
-                break;
+        public void deleteEvent() {
+        try {
+            System.out.print("Enter Event ID to delete: ");
+            int id = sc.nextInt(); 
+            sc.nextLine(); // Clear Enter key
+
+            Event deletedEvent = null;
+            // Search for the event
+            for (Event e : events) {
+                if (e.id == id) { 
+                    deletedEvent = e; 
+                    break; 
+                }
             }
-        }
-        if (deletedEvent != null) {
-            System.out.println("You are about to delete: " + deletedEvent.title + " on " + deletedEvent.date);
-            System.out.print("Are you sure? (y/n): ");
-            if (!sc.nextLine().equalsIgnoreCase("y")) {
-                System.out.println("Deletion cancelled.");
-                return;
+
+            // Ask "Are you sure?"
+            if (deletedEvent != null) {
+                System.out.println("You are about to delete: " + deletedEvent.title);
+                System.out.print("Are you sure? (y/n): ");
+                if (!sc.nextLine().equalsIgnoreCase("y")) {
+                    System.out.println("Deletion cancelled.");
+                    return;
+                }
             }
-        }
-        boolean removed = events.removeIf(e -> e.id == id);
-        recurrenceMap.remove(id);
-        additionalMap.remove(id);
-        if (removed) {
-            System.out.println("Event deleted.");
-            CSVUtils.rewriteEventCSV(events);
-            CSVUtils.rewriteRecurrenceCSV(recurrenceMap);
-            CSVUtils.rewriteAdditionalCSV(additionalMap);
-        } else {
-            System.out.println("ID not found.");
+
+            // Deletion Logic
+            // Since 'id' is only assigned once here, no 'finalId' is needed!
+            boolean removed = events.removeIf(e -> e.id == id);
+            recurrenceMap.remove(id);
+            additionalMap.remove(id);
+
+            if (removed) {
+                System.out.println("Event deleted.");
+                CSVUtils.rewriteEventCSV(events);
+                CSVUtils.rewriteRecurrenceCSV(recurrenceMap);
+                CSVUtils.rewriteAdditionalCSV(additionalMap);
+            } else {
+                System.out.println("ID not found.");
+            }
+
+        } catch (Exception e) {
+            // If they type a word, it jumps here, prints the error, and ends the method
+            System.out.println("❌ Invalid input: Please enter a numeric ID.");
+            sc.nextLine(); // Clear the bad input
         }
     }
 
