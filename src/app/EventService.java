@@ -7,27 +7,29 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.io.*;
 
-
 public class EventService {
+
     private static List<Event> events = new ArrayList<>();
     private Map<Integer, Recurrence> recurrenceMap = new HashMap<>();
     static private Map<Integer, AdditionalInfo> additionalMap = new HashMap<>();
     private int idCounter = 1;
     private Scanner sc = new Scanner(System.in);
-    
+
     public EventService() {
         loadDataFromFiles();
     }
-    
+
     private boolean isConflicting(LocalDateTime start, LocalDateTime end, int ignoreId) {
         for (Event e : events) {
             // Skip the event itself if we are updating it
-            if (e.id == ignoreId) continue;
+            if (e.id == ignoreId) {
+                continue;
+            }
 
             // Logic: (StartA < EndB) AND (EndA > StartB)
             if (start.isBefore(e.endDateTime) && end.isAfter(e.startDateTime)) {
-                System.out.println("⚠ CONFLICT DETECTED: Clashes with '" + e.title + 
-                                   "' [" + e.startDateTime + " to " + e.endDateTime + "]");
+                System.out.println("⚠ CONFLICT DETECTED: Clashes with '" + e.title
+                        + "' [" + e.startDateTime + " to " + e.endDateTime + "]");
                 return true;
             }
         }
@@ -38,23 +40,31 @@ public class EventService {
         File eventFile = new File("event.csv");
         if (eventFile.exists()) {
             try (Scanner reader = new Scanner(eventFile)) {
-                if (reader.hasNextLine()) reader.nextLine(); // Skip CSV Header
+                if (reader.hasNextLine()) {
+                    reader.nextLine(); // Skip CSV Header
+                }
                 while (reader.hasNextLine()) {
                     String[] p = reader.nextLine().split(",");
-                    if (p.length >= 7){
-                        Event e = new Event(Integer.parseInt(p[0]), p[1], p[2], 
+                    if (p.length >= 7) {
+                        Event e = new Event(Integer.parseInt(p[0]), p[1], p[2],
                                 LocalDateTime.parse(p[3]), LocalDateTime.parse(p[4]), p[5], p[6]);
                         events.add(e);
-                        if (e.id >= idCounter) idCounter = e.id + 1; // Keep ID counter synced
+                        if (e.id >= idCounter) {
+                            idCounter = e.id + 1; // Keep ID counter synced
+                        }
                     }
                 }
-            } catch (Exception e) { System.out.println("Error loading event.csv"); }
+            } catch (Exception e) {
+                System.out.println("Error loading event.csv");
+            }
         }
 
         File recurFile = new File("recurrent.csv");
         if (recurFile.exists()) {
             try (Scanner reader = new Scanner(recurFile)) {
-                if (reader.hasNextLine()) reader.nextLine(); // Skip header
+                if (reader.hasNextLine()) {
+                    reader.nextLine(); // Skip header
+                }
                 while (reader.hasNextLine()) {
                     String[] p = reader.nextLine().split(",");
                     if (p.length == 4) {
@@ -63,25 +73,31 @@ public class EventService {
                         recurrenceMap.put(id, r);
                     }
                 }
-            } catch (Exception e) { System.out.println("Error loading recurrent.csv"); }
+            } catch (Exception e) {
+                System.out.println("Error loading recurrent.csv");
+            }
         }
-        
+
         File addFile = new File("additional.csv");
         if (addFile.exists()) {
             try (Scanner reader = new Scanner(addFile)) {
-                if (reader.hasNextLine()) reader.nextLine(); // Skip header
+                if (reader.hasNextLine()) {
+                    reader.nextLine(); // Skip header
+                }
                 while (reader.hasNextLine()) {
                     String[] p = reader.nextLine().split(",");
                     if (p.length == 3) {
                         int id = Integer.parseInt(p[0]);
                         AdditionalInfo info = new AdditionalInfo(id, p[1], p[2]);
                         additionalMap.put(id, info);
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Error loading additional.csv");
             }
         }
-    } catch (Exception e) { System.out.println("Error loading additional.csv"); }
-}
     }
-    
+
     // === Create Event ===
     public void createEvent() {
         try {
@@ -93,34 +109,60 @@ public class EventService {
             String loc = sc.nextLine();
             System.out.print("Priority (High/Medium/Low): ");
             String prio = sc.nextLine();
-            System.out.print("Start (YYYY-MM-DD HH:MM): ");
-            LocalDateTime start = LocalDateTime.parse(sc.nextLine().replace(" ", "T"));
-            System.out.print("End (YYYY-MM-DD HH:MM): ");
-            LocalDateTime end = LocalDateTime.parse(sc.nextLine().replace(" ", "T"));
 
-            if (end.isBefore(start)) {
-                System.out.println("End before start!");
-                return;
+            // --- CHANGED SECTION START ---
+            LocalDateTime start = null;
+            while (start == null) {
+                System.out.print("Start (YYYY-MM-DD HH:MM): ");
+                String input = sc.nextLine();
+                try {
+                    start = LocalDateTime.parse(input.replace(" ", "T"));
+                } catch (DateTimeParseException e) {
+                    System.out.println("❌ Invalid date format. Please use YYYY-MM-DD HH:MM (e.g., 2026-01-20 14:30).");
+                }
             }
-            
+
+            LocalDateTime end = null;
+            while (end == null) {
+                System.out.print("End (YYYY-MM-DD HH:MM): ");
+                String input = sc.nextLine();
+                try {
+                    LocalDateTime tempEnd = LocalDateTime.parse(input.replace(" ", "T"));
+                    if (tempEnd.isBefore(start)) {
+                        System.out.println("❌ End time cannot be before start time. Please re-enter.");
+                    } else {
+                        end = tempEnd;
+                    }
+                } catch (DateTimeParseException e) {
+                    System.out.println("❌ Invalid date format. Please use YYYY-MM-DD HH:MM.");
+                }
+            }
+            // --- CHANGED SECTION END ---
+
             if (isConflicting(start, end, -1)) { // -1 because it's a new event
                 System.out.print("Do you still want to schedule this? (y/n): ");
-                if (!sc.nextLine().equalsIgnoreCase("y")) return;
+                if (!sc.nextLine().equalsIgnoreCase("y")) {
+                    return;
+                }
             }
 
             int id = idCounter++;
             Event e = new Event(id, title, desc, start, end, loc, prio);
             events.add(e);
             CSVUtils.rewriteEventCSV(events);
-            
+
             System.out.print("Additional Field (e.g., Work/Personal): ");
             String cat = sc.nextLine();
             System.out.print("Field's Description: ");
             String att = sc.nextLine();
-            
-            if(cat.equals("")) cat = "No Field";
-            if(att.equals("")) att = "None";
-    
+
+            if (cat.equals("")) {
+                cat = "No Field";
+            }
+            if (att.equals("")) {
+                att = "None";
+            }
+
             // Save to Map and CSV
             AdditionalInfo info = new AdditionalInfo(id, cat, att);
             additionalMap.put(id, info);
@@ -131,11 +173,14 @@ public class EventService {
                 System.out.print("Interval (1d/1w/1m): ");
                 String interval = sc.nextLine();
                 System.out.println("1. Times  2. Until Date");
-                int type = sc.nextInt(); sc.nextLine();
-                int times = 0; String endDate = "0";
+                int type = sc.nextInt();
+                sc.nextLine();
+                int times = 0;
+                String endDate = "0";
                 if (type == 1) {
                     System.out.print("Times: ");
-                    times = sc.nextInt(); sc.nextLine();
+                    times = sc.nextInt();
+                    sc.nextLine();
                 } else {
                     System.out.print("Until (YYYY-MM-DD): ");
                     endDate = sc.nextLine();
@@ -146,11 +191,9 @@ public class EventService {
             }
             System.out.println("Event created with ID: " + id);
         } catch (Exception e) {
-            System.out.println("Invalid input.");
+            System.out.println("Invalid input: " + e.getMessage());
         }
     }
-    
-    
 
     // === Update Event ===
     public void updateEvent() {
@@ -161,7 +204,10 @@ public class EventService {
             sc.nextLine();
             Event target = null;
             for (Event e : events) {
-                if (e.id == id) { target = e; break; }
+                if (e.id == id) {
+                    target = e;
+                    break;
+                }
             }
             if (target == null) {
                 System.out.println("❌ Event not found.");
@@ -171,18 +217,28 @@ public class EventService {
             // --- Standard Field Updates ---
             System.out.print("New Title (Enter to keep \"" + target.title + "\"): ");
             String newTitle = sc.nextLine();
-            if (!newTitle.trim().isEmpty()) target.title = newTitle;
+            if (!newTitle.trim().isEmpty()) {
+                target.title = newTitle;
+            }
 
             System.out.print("New Description (Enter to keep current): ");
             String newDesc = sc.nextLine();
-            if (!newDesc.trim().isEmpty()) target.description = newDesc;
+            if (!newDesc.trim().isEmpty()) {
+                target.description = newDesc;
+            }
 
             while (true) {
                 System.out.print("New Date (YYYY-MM-DD, Enter to keep " + target.date + "): ");
                 String dateInput = sc.nextLine().trim();
-                if (dateInput.isEmpty()) break;
-                try { target.date = LocalDate.parse(dateInput); break; }
-                catch (DateTimeParseException e) { System.out.println("⚠ Invalid date format."); }
+                if (dateInput.isEmpty()) {
+                    break;
+                }
+                try {
+                    target.date = LocalDate.parse(dateInput);
+                    break;
+                } catch (DateTimeParseException e) {
+                    System.out.println("⚠ Invalid date format.");
+                }
             }
 
             System.out.print("New Start (YYYY-MM-DD HH:MM, Enter to keep): ");
@@ -197,11 +253,13 @@ public class EventService {
             if (!newEnd.isEmpty()) {
                 target.endDateTime = LocalDateTime.parse(newEnd.replace(" ", "T"));
             }
-            
+
             // Conflict Check
             if (isConflicting(target.startDateTime, target.endDateTime, target.id)) {
                 System.out.print("This update conflicts with another event. Proceed anyway? (y/n): ");
-                if (!sc.nextLine().equalsIgnoreCase("y")) return; 
+                if (!sc.nextLine().equalsIgnoreCase("y")) {
+                    return;
+                }
             }
 
             // Recurrence Update
@@ -211,11 +269,14 @@ public class EventService {
                     System.out.print("New interval (e.g., 1d, 2w, 1m): ");
                     String interval = sc.nextLine();
                     System.out.println("End condition: 1. Count  2. Until Date");
-                    int type = sc.nextInt(); sc.nextLine();
-                    int count = 0; LocalDate endDate = null;
+                    int type = sc.nextInt();
+                    sc.nextLine();
+                    int count = 0;
+                    LocalDate endDate = null;
                     if (type == 1) {
                         System.out.print("Repeat how many times: ");
-                        count = sc.nextInt(); sc.nextLine();
+                        count = sc.nextInt();
+                        sc.nextLine();
                     } else {
                         System.out.print("Recur until (YYYY-MM-DD): ");
                         endDate = LocalDate.parse(sc.nextLine());
@@ -237,11 +298,15 @@ public class EventService {
 
                 System.out.print("New Field (Current: " + currentCat + "): ");
                 String inputCat = sc.nextLine();
-                if (inputCat.isEmpty()) inputCat = currentCat;
+                if (inputCat.isEmpty()) {
+                    inputCat = currentCat;
+                }
 
                 System.out.print("New Description (Current: " + currentAtt + "): ");
                 String inputAtt = sc.nextLine();
-                if (inputAtt.isEmpty()) inputAtt = currentAtt;
+                if (inputAtt.isEmpty()) {
+                    inputAtt = currentAtt;
+                }
 
                 AdditionalInfo newInfo = new AdditionalInfo(id, inputCat, inputAtt);
                 additionalMap.put(id, newInfo);
@@ -250,8 +315,8 @@ public class EventService {
             // Save all changes
             CSVUtils.rewriteEventCSV(events);
             CSVUtils.rewriteRecurrenceCSV(recurrenceMap);
-            CSVUtils.rewriteAdditionalCSV(additionalMap); 
-            
+            CSVUtils.rewriteAdditionalCSV(additionalMap);
+
             System.out.println("✅ Event updated.");
         } catch (Exception e) {
             System.out.println("❌ Invalid input: " + e.getMessage());
@@ -262,10 +327,14 @@ public class EventService {
     // === Delete Event ===
     public void deleteEvent() {
         System.out.print("Enter Event ID to delete: ");
-        int id = sc.nextInt(); sc.nextLine();
+        int id = sc.nextInt();
+        sc.nextLine();
         Event deletedEvent = null;
         for (Event e : events) {
-            if (e.id == id) { deletedEvent = e; break; }
+            if (e.id == id) {
+                deletedEvent = e;
+                break;
+            }
         }
         if (deletedEvent != null) {
             System.out.println("You are about to delete: " + deletedEvent.title + " on " + deletedEvent.date);
@@ -287,6 +356,7 @@ public class EventService {
             System.out.println("ID not found.");
         }
     }
+
     // === Show Statistics ===
     public void showStatistics() {
         if (events.isEmpty()) {
@@ -319,20 +389,29 @@ public class EventService {
         System.out.println("1. Search by ID");
         System.out.println("2. Search by Title");
         System.out.println("3. Search by Date");
-        int choice = sc.nextInt(); sc.nextLine();
+        int choice = sc.nextInt();
+        sc.nextLine();
         switch (choice) {
-            case 1 -> searchById();
-            case 2 -> searchByTitle();
-            case 3 -> searchByDate();
-            default -> System.out.println("Invalid choice.");
+            case 1 ->
+                searchById();
+            case 2 ->
+                searchByTitle();
+            case 3 ->
+                searchByDate();
+            default ->
+                System.out.println("Invalid choice.");
         }
     }
 
     private void searchById() {
         System.out.print("Enter ID: ");
-        int id = sc.nextInt(); sc.nextLine();
+        int id = sc.nextInt();
+        sc.nextLine();
         for (Event e : events) {
-            if (e.id == id) { System.out.println("Found: " + e); return; }
+            if (e.id == id) {
+                System.out.println("Found: " + e);
+                return;
+            }
         }
         System.out.println("Not found.");
     }
@@ -347,7 +426,9 @@ public class EventService {
                 found = true;
             }
         }
-        if (!found) System.out.println("No events found.");
+        if (!found) {
+            System.out.println("No events found.");
+        }
     }
 
     private void searchByDate() {
@@ -369,12 +450,13 @@ public class EventService {
             System.out.println("Invalid date format.");
         }
     }
-    
+
     public void advancedSearch() {
         System.out.println("1. Search by Priority");
         System.out.println("2. Search by Date Range");
         System.out.println("3. Search by Category");
-        int choice = sc.nextInt(); sc.nextLine();
+        int choice = sc.nextInt();
+        sc.nextLine();
 
         if (choice == 1) {
             System.out.print("Enter Priority (High/Medium/Low): ");
@@ -384,8 +466,8 @@ public class EventService {
             for (Event e : events) {
                 if (e.priority.equalsIgnoreCase(p)) {
                     // Main line: Date, Time, Title, Location
-                    System.out.printf("[%s] %s @ %s | %s (Loc: %s)\n", 
-                        e.priority.toUpperCase(), e.date, e.startDateTime.toLocalTime(), e.title, e.location);
+                    System.out.printf("[%s] %s @ %s | %s (Loc: %s)\n",
+                            e.priority.toUpperCase(), e.date, e.startDateTime.toLocalTime(), e.title, e.location);
                     // Sub-line: Description
                     System.out.println("     └─ Desc: " + e.description);
                     System.out.println("--------------------------------------------------");
@@ -403,29 +485,29 @@ public class EventService {
             for (Event e : events) {
                 // check if start is after the end
                 if (!e.date.isBefore(start) && !e.date.isAfter(end)) {
-                    System.out.printf("%s @ %s | %s (Loc: %s)\n", 
-                        e.date, e.startDateTime.toLocalTime(), e.title, e.location);
+                    System.out.printf("%s @ %s | %s (Loc: %s)\n",
+                            e.date, e.startDateTime.toLocalTime(), e.title, e.location);
                     System.out.println("     └─ Desc: " + e.description);
                     System.out.println("--------------------------------------------------");
                 }
             }
         } else if (choice == 3) {
-        System.out.print("Enter Category: ");
-        String targetCat = sc.nextLine().toLowerCase();
-        System.out.println("\n--- Events in Category: " + targetCat + " ---");
-        
-        for (AdditionalInfo info : additionalMap.values()) {
-            if (info.category.toLowerCase().contains(targetCat)) {
-               
-                for (Event e : events) {
-                    if (e.id == info.eventId) {
-                        System.out.printf("[%s] %s | %s\n", 
-                            info.category, e.title, e.date);
-                         System.out.println("     - Attendees: " + info.attendees);
+            System.out.print("Enter Category: ");
+            String targetCat = sc.nextLine().toLowerCase();
+            System.out.println("\n--- Events in Category: " + targetCat + " ---");
+
+            for (AdditionalInfo info : additionalMap.values()) {
+                if (info.category.toLowerCase().contains(targetCat)) {
+
+                    for (Event e : events) {
+                        if (e.id == info.eventId) {
+                            System.out.printf("[%s] %s | %s\n",
+                                    info.category, e.title, e.date);
+                            System.out.println("     - Attendees: " + info.attendees);
+                        }
                     }
                 }
             }
-        }
         }
     }
 
@@ -437,17 +519,21 @@ public class EventService {
             sc.nextLine();
 
             switch (choice) {
-                case 1 -> viewAllEvents();
-                case 2 -> viewWeek();
-                case 3 -> viewMonth();
-                default -> System.out.println("Invalid choice.");
+                case 1 ->
+                    viewAllEvents();
+                case 2 ->
+                    viewWeek();
+                case 3 ->
+                    viewMonth();
+                default ->
+                    System.out.println("Invalid choice.");
             }
         } catch (InputMismatchException e) {
             System.out.println("Invalid input.");
             sc.nextLine();
-      }
+        }
     }
-    
+
     static void viewAllEvents() {
         if (events.isEmpty()) {
             System.out.println("No events found.");
@@ -461,7 +547,7 @@ public class EventService {
             // Fetch additional info safely
             String category = "No Field";
             String attendees = "None";
-            
+
             if (additionalMap.containsKey(e.id)) {
                 AdditionalInfo info = additionalMap.get(e.id);
                 category = info.category;
@@ -469,11 +555,11 @@ public class EventService {
             }
 
             System.out.println(
-                "ID: " + e.id +
-                " | " + e.title +
-                " | " + e.startDateTime +
-                " | Cat: " + category + 
-                " | Att: " + attendees
+                    "ID: " + e.id
+                    + " | " + e.title
+                    + " | " + e.startDateTime
+                    + " | Cat: " + category
+                    + " | Att: " + attendees
             );
         }
     }
@@ -488,17 +574,17 @@ public class EventService {
             System.out.println("\n--- Week of " + weekStart + " ---");
             for (int i = 0; i < 7; i++) {
                 LocalDate day = weekStart.plusDays(i);
-                
+
                 // This helper fetches the formatted string with Category included
-                List<String> eventsOnDay = getEventTitlesForDate(day); 
+                List<String> eventsOnDay = getEventTitlesForDate(day);
 
                 System.out.println(day + " (" + day.getDayOfWeek().toString().substring(0, 3) + "): ");
-                
+
                 if (eventsOnDay.isEmpty()) {
                     System.out.println("    -");
                 } else {
                     for (String eventStr : eventsOnDay) {
-                       
+
                         System.out.println("    " + eventStr);
                     }
                 }
@@ -532,18 +618,25 @@ public class EventService {
         System.out.println(" SUN  MON  TUE  WED  THU  FRI  SAT");
 
         // 1. Print leading spaces
-        for (int i = 0; i < startDayOffset; i++) System.out.print("     ");
+        for (int i = 0; i < startDayOffset; i++) {
+            System.out.print("     ");
+        }
 
         // 2. Print the days grid
         for (int day = 1; day <= daysInMonth; day++) {
             LocalDate current = LocalDate.of(year, month, day);
             // This helper handles the grid markers [ 5] vs  5
-            List<String> titles = getEventTitlesForDate(current); 
-            
-            if (!titles.isEmpty()) System.out.printf("[%2d] ", day);
-            else System.out.printf(" %2d  ", day);
+            List<String> titles = getEventTitlesForDate(current);
 
-            if ((day + startDayOffset) % 7 == 0) System.out.println();
+            if (!titles.isEmpty()) {
+                System.out.printf("[%2d] ", day);
+            } else {
+                System.out.printf(" %2d  ", day);
+            }
+
+            if ((day + startDayOffset) % 7 == 0) {
+                System.out.println();
+            }
         }
         System.out.println("\n====================================");
         System.out.println("           MONTHLY AGENDA");
@@ -553,7 +646,7 @@ public class EventService {
         boolean anyEvents = false;
         for (int day = 1; day <= daysInMonth; day++) {
             LocalDate current = LocalDate.of(year, month, day);
-            
+
             for (Event e : events) {
                 boolean isMatch = false;
                 if (e.date.equals(current)) {
@@ -572,21 +665,24 @@ public class EventService {
                     }
 
                     // Display: Date Day: Title (Time) - [Category]
-                    System.out.printf("%02d %s: %s (%s - %s) - [%s]\n", 
-                        day, 
-                        current.getDayOfWeek().toString().substring(0,3), 
-                        e.title, 
-                        e.startDateTime.toLocalTime(), 
-                        e.endDateTime.toLocalTime(),
-                        category); // <--- Added this
+                    System.out.printf("%02d %s: %s (%s - %s) - [%s]\n",
+                            day,
+                            current.getDayOfWeek().toString().substring(0, 3),
+                            e.title,
+                            e.startDateTime.toLocalTime(),
+                            e.endDateTime.toLocalTime(),
+                            category); // <--- Added this
                     anyEvents = true;
                 }
             }
         }
 
-        if (!anyEvents) System.out.println("No events scheduled for this month.");
+        if (!anyEvents) {
+            System.out.println("No events scheduled for this month.");
+        }
         System.out.println("====================================");
     }
+
     // === Helper for recurrence ===
     private List<String> getEventTitlesForDate(LocalDate targetDate) {
         List<String> result = new ArrayList<>();
@@ -595,13 +691,12 @@ public class EventService {
             // 1. Check if it is the specific date (Normal event OR Start of recurring)
             if (e.date.equals(targetDate)) {
                 isMatch = true;
-            } 
-            // 2. Check if it is a recurring instance
+            } // 2. Check if it is a recurring instance
             else if (recurrenceMap.containsKey(e.id)) {
                 Recurrence r = recurrenceMap.get(e.id);
                 // Only check recurrence if we are strictly AFTER the start date
                 if (targetDate.isAfter(e.date)) {
-                     isMatch = checkRecurrence(e.date, targetDate, r);
+                    isMatch = checkRecurrence(e.date, targetDate, r);
                 }
             }
 
@@ -613,21 +708,33 @@ public class EventService {
                 }
 
                 // FORMAT: [17:40] Title (Category)
-                String formatted = String.format("[%s] %s (%s)", 
-                    e.startDateTime.toLocalTime(), e.title, category);
+                String formatted = String.format("[%s] %s (%s)",
+                        e.startDateTime.toLocalTime(), e.title, category);
                 result.add(formatted);
             }
         }
         return result;
     }
-    
-    
 
     private boolean checkRecurrence(LocalDate start, LocalDate current, Recurrence r) {
         String interval = r.recurrentInterval;
-        // Parse the number (e.g., "2" from "2w")
-        int value = Integer.parseInt(interval.substring(0, interval.length() - 1));
-        // Parse the unit (e.g., "w")
+
+        //Safety check for invalid intervals
+        if (interval == null || interval.length() < 2) {
+            return false;
+        }
+
+        //Handle Capital Letters (Convert "1D" -> "1d")
+        interval = interval.toLowerCase();
+
+        //Parse the number (e.g., "2" from "2w")
+        int value;
+        try {
+            value = Integer.parseInt(interval.substring(0, interval.length() - 1));
+        } catch (NumberFormatException e) {
+            return false; 
+        }
+        
         String unit = interval.substring(interval.length() - 1);
 
         long diff = switch (unit) {
@@ -638,49 +745,38 @@ public class EventService {
         };
 
         if (diff <= 0 || diff % value != 0) return false;
-        if (r.recurrentTimes > 0 && diff / value > r.recurrentTimes) return false;
-        if (!r.recurrentEndDate.equals("0")) {
-            LocalDate endDate = LocalDate.parse(r.recurrentEndDate);
-            if (current.isAfter(endDate)) return false;
+        
+        //Safety check for End Date
+        if (r.recurrentEndDate != null && !r.recurrentEndDate.equals("0") && !r.recurrentEndDate.trim().isEmpty()) {
+            try {
+                LocalDate endDate = LocalDate.parse(r.recurrentEndDate);
+                if (current.isAfter(endDate)) return false;
+            } catch (DateTimeParseException e) {
+                // Ignore invalid end date strings
+            }
         }
 
-        // 3. precise Interval Logic
+        // Check "Times" Limit (if set)
         long occurrencesPassed = 0;
-
         switch (unit) {
-            case "d" -> {
-                long days = ChronoUnit.DAYS.between(start, current);
-                if (days % value != 0) return false;
-                occurrencesPassed = days / value;
-            }
+            case "d" -> occurrencesPassed = diff / value;
             case "w" -> {
-                long days = ChronoUnit.DAYS.between(start, current);
-                // MUST be a multiple of 7 days to land on the same day of the week
-                if (days % 7 != 0) return false; 
-                
-                long weeks = days / 7;
-                if (weeks % value != 0) return false;
-                occurrencesPassed = weeks / value;
+                 long days = ChronoUnit.DAYS.between(start, current);
+                 if (days % 7 != 0) return false; 
+                 occurrencesPassed = (days / 7) / value;
             }
             case "m" -> {
-                // MUST match the exact day of the month (e.g., the 10th)
-                if (current.getDayOfMonth() != start.getDayOfMonth()) return false;
-
-                long months = ChronoUnit.MONTHS.between(start, current);
-                if (months % value != 0) return false;
-                occurrencesPassed = months / value;
+                 if (current.getDayOfMonth() != start.getDayOfMonth()) return false;
+                 occurrencesPassed = diff / value;
             }
-            default -> { return false; }
         }
 
-        // 4. Check "Times" Limit (if set)
         if (r.recurrentTimes > 0 && occurrencesPassed > r.recurrentTimes) {
             return false;
         }
 
         return true;
     }
-
     // === Backup Events ===
     public void backupEvents() {
         try (PrintWriter pw = new PrintWriter("calendar_backup.txt")) {
@@ -688,8 +784,8 @@ public class EventService {
             pw.println("===EVENTS===");
             for (Event e : events) {
                 // Store all fields: ID, Title, Desc, Start, End
-                pw.println(e.id + "|" + e.title + "|" + e.description + "|" + 
-                        e.startDateTime + "|" + e.endDateTime + "|" + e.location + "|" + e.priority);
+                pw.println(e.id + "|" + e.title + "|" + e.description + "|"
+                        + e.startDateTime + "|" + e.endDateTime + "|" + e.location + "|" + e.priority);
             }
 
             // Section 2: Recurrences
@@ -697,7 +793,7 @@ public class EventService {
             for (Recurrence r : recurrenceMap.values()) {
                 pw.println(r.eventId + "|" + r.recurrentInterval + "|" + r.recurrentTimes + "|" + r.recurrentEndDate);
             }
-            
+
             pw.println("===ADDITIONAL===");
             for (AdditionalInfo info : additionalMap.values()) {
                 pw.println(info.eventId + "|" + info.category + "|" + info.attendees);
@@ -707,6 +803,7 @@ public class EventService {
             System.out.println("Backup failed: " + e.getMessage());
         }
     }
+
     // === Restore Events ===
     public void restoreEvents() {
         File backupFile = new File("calendar_backup.txt");
@@ -738,10 +835,12 @@ public class EventService {
                 String[] parts = line.split("\\|");
                 if (currentSection.equals("EVENTS") && parts.length == 7) {
                     int id = Integer.parseInt(parts[0]);
-                    Event e = new Event(id, parts[1], parts[2], LocalDateTime.parse(parts[3]), 
+                    Event e = new Event(id, parts[1], parts[2], LocalDateTime.parse(parts[3]),
                             LocalDateTime.parse(parts[4]), parts[5], parts[6]);
                     events.add(e);
-                    if (id > maxId) maxId = id;
+                    if (id > maxId) {
+                        maxId = id;
+                    }
                 } else if (currentSection.equals("RECURRENCE") && parts.length == 4) {
                     int id = Integer.parseInt(parts[0]);
                     Recurrence r = new Recurrence(id, parts[1], Integer.parseInt(parts[2]), parts[3]);
@@ -766,4 +865,3 @@ public class EventService {
         }
     }
 }
-

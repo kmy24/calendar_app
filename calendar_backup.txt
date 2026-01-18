@@ -1,8 +1,0 @@
-===EVENTS===
-7|makan|saya|2026-01-17T20:00|2026-01-17T21:00|-|medium
-8|tido|-|2026-01-17T20:00|2026-01-17T21:00|-|low
-===RECURRENCE===
-7|1w|0|2026-01-31
-===ADDITIONAL===
-7|No Field|None
-8|No Field|None
